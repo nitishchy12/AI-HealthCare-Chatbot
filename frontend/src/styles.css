@@ -1,0 +1,125 @@
+:root {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #1d2633;
+  background: linear-gradient(180deg, #f3f9ff 0%, #eaf3ff 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.app {
+  min-height: 100vh;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 24px;
+  background: #0c2d57;
+}
+
+.brand, .nav a, .nav button {
+  color: #fff;
+  text-decoration: none;
+  margin-right: 12px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.page {
+  width: min(1000px, 92%);
+  margin: 24px auto;
+}
+
+.card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 18px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.form, .form-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form-inline {
+  flex-direction: row;
+}
+
+input, textarea, button {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #c7d6e6;
+  font: inherit;
+}
+
+textarea {
+  min-height: 100px;
+}
+
+.btn {
+  background: #1f6feb;
+  color: #fff;
+  border: 0;
+  width: fit-content;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.chat-item {
+  border: 1px solid #d8e4f2;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.error {
+  color: #be1f2d;
+}
+
+.success {
+  color: #137333;
+}
+
+.risk-low {
+  color: #1f7a1f;
+}
+
+.risk-medium {
+  color: #b56f00;
+}
+
+.risk-high {
+  color: #be1f2d;
+}
+
+.disclaimer {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+@media (max-width: 700px) {
+  .nav {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .form-inline {
+    flex-direction: column;
+  }
+}
