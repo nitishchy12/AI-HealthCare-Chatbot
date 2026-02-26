@@ -1,26 +1,33 @@
 const { pool } = require('../config/db');
 const { logger } = require('../utils/logger');
 
+const buildGeneralFallback = () => ({
+  symptoms: 'Common symptoms may vary from person to person.',
+  possibleCauses: 'Could be due to infection, allergy, stress, or other conditions.',
+  prevention: 'Stay hydrated, maintain hygiene, and monitor symptoms.',
+  whenToConsultDoctor: 'If symptoms persist for more than 2-3 days or worsen, consult a doctor.',
+  riskLevel: 'Low'
+});
+
 const buildFallback = async (question) => {
-  const q = question.toLowerCase();
-  const diseases = await pool.query('SELECT * FROM diseases');
+  const normalized = question.trim().toLowerCase();
+  const match = await pool.query(
+    `SELECT disease_name, symptoms, prevention, treatment, risk_factors
+     FROM diseases
+     WHERE LOWER($1) LIKE '%' || LOWER(disease_name) || '%'
+     ORDER BY LENGTH(disease_name) DESC
+     LIMIT 1`,
+    [normalized]
+  );
 
-  const matched = diseases.rows.find((d) => q.includes(d.disease_name.toLowerCase()));
-  if (!matched) {
-    return {
-      symptoms: 'Common symptoms may vary from person to person.',
-      possibleCauses: 'Could be due to infection, allergy, stress, or other conditions.',
-      prevention: 'Stay hydrated, maintain hygiene, and monitor symptoms.',
-      whenToConsultDoctor: 'If symptoms persist for more than 2-3 days or worsen, consult a doctor.',
-      riskLevel: 'Low'
-    };
-  }
+  if (match.rowCount === 0) return buildGeneralFallback();
 
+  const d = match.rows[0];
   return {
-    symptoms: matched.symptoms,
-    possibleCauses: matched.risk_factors,
-    prevention: matched.prevention,
-    whenToConsultDoctor: matched.treatment,
+    symptoms: d.symptoms,
+    possibleCauses: d.risk_factors,
+    prevention: d.prevention,
+    whenToConsultDoctor: d.treatment,
     riskLevel: 'Medium'
   };
 };

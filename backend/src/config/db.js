@@ -3,6 +3,8 @@ const mongoose = require('mongoose');
 const { logger } = require('../utils/logger');
 
 const pool = new Pool({ connectionString: process.env.POSTGRES_URI });
+let postgresConnected = false;
+let mongoConnected = false;
 
 const initSql = `
 CREATE TABLE IF NOT EXISTS users (
@@ -36,14 +38,66 @@ CREATE TABLE IF NOT EXISTS diseases (
 );
 `;
 
+const ensureConstraints = async () => {
+  await pool.query(`
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'hospitals_name_city_address_key'
+      ) THEN
+        ALTER TABLE hospitals ADD CONSTRAINT hospitals_name_city_address_key UNIQUE (name, city, address);
+      END IF;
+    EXCEPTION
+      WHEN duplicate_object THEN
+        NULL;
+    END $$;
+  `);
+};
+
 const connectPostgres = async () => {
-  await pool.query(initSql);
-  logger.info('PostgreSQL connected and tables ensured');
+  try {
+    await pool.query('SELECT 1');
+    await pool.query(initSql);
+    await ensureConstraints();
+    postgresConnected = true;
+    logger.info('PostgreSQL connected and validated');
+  } catch (error) {
+    postgresConnected = false;
+    logger.error('PostgreSQL connection failed', { error: error.message });
+    throw error;
+  }
 };
 
 const connectMongo = async () => {
-  await mongoose.connect(process.env.MONGO_URI);
-  logger.info('MongoDB connected');
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    mongoConnected = mongoose.connection.readyState === 1;
+    logger.info('MongoDB connected and validated');
+  } catch (error) {
+    mongoConnected = false;
+    logger.error('MongoDB connection failed', { error: error.message });
+    throw error;
+  }
 };
 
-module.exports = { pool, connectPostgres, connectMongo };
+const getDbHealth = () => ({ postgres: postgresConnected, mongo: mongoConnected });
+
+const closeConnections = async () => {
+  try {
+    await pool.end();
+  } catch (_error) {
+    logger.warn('PostgreSQL pool close failed');
+  }
+
+  try {
+    await mongoose.connection.close(false);
+  } catch (_error) {
+    logger.warn('MongoDB close failed');
+  }
+
+  postgresConnected = false;
+  mongoConnected = false;
+  logger.info('Database connections closed');
+};
+
+module.exports = { pool, connectPostgres, connectMongo, closeConnections, getDbHealth };

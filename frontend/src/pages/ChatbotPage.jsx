@@ -4,20 +4,28 @@ import { getChatHistory, sendChat } from '../services/health.service';
 function ChatbotPage() {
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const [error, setError] = useState('');
   const [chats, setChats] = useState([]);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, limit: 10 });
 
-  const loadHistory = async () => {
+  const loadHistory = async (targetPage = page) => {
+    setHistoryLoading(true);
     try {
-      const res = await getChatHistory();
-      setChats(res.data || []);
+      const res = await getChatHistory(targetPage, 10);
+      setChats(res.data?.items || []);
+      setPagination(res.data?.pagination || { page: 1, totalPages: 1, total: 0, limit: 10 });
+      setPage(targetPage);
     } catch (_err) {
       setChats([]);
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
   useEffect(() => {
-    loadHistory();
+    loadHistory(1);
   }, []);
 
   const onSubmit = async (e) => {
@@ -27,7 +35,7 @@ function ChatbotPage() {
     try {
       await sendChat({ question });
       setQuestion('');
-      await loadHistory();
+      await loadHistory(1);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to generate response');
     } finally {
@@ -56,8 +64,15 @@ function ChatbotPage() {
 
       <div className="card">
         <h3>Chat History</h3>
-        {chats.length === 0 && <p>No chats yet.</p>}
-        {chats.map((item) => (
+        {historyLoading && (
+          <div>
+            <div className="skeleton-card" />
+            <div className="skeleton-card" />
+            <div className="skeleton-card" />
+          </div>
+        )}
+        {!historyLoading && chats.length === 0 && <p>No chats yet.</p>}
+        {!historyLoading && chats.map((item) => (
           <article key={item._id} className="chat-item">
             <p><strong>Question:</strong> {item.question}</p>
             <p><strong>Symptoms:</strong> {item.aiResponse?.symptoms}</p>
@@ -68,6 +83,14 @@ function ChatbotPage() {
             <p className="disclaimer">{item.aiResponse?.disclaimer}</p>
           </article>
         ))}
+
+        {!historyLoading && pagination.totalPages > 1 && (
+          <div className="pager">
+            <button type="button" onClick={() => loadHistory(page - 1)} disabled={page <= 1}>Previous</button>
+            <span>Page {pagination.page} of {pagination.totalPages}</span>
+            <button type="button" onClick={() => loadHistory(page + 1)} disabled={page >= pagination.totalPages}>Next</button>
+          </div>
+        )}
       </div>
     </section>
   );

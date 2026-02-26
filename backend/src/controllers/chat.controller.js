@@ -6,7 +6,7 @@ const { clean } = require('../utils/sanitize');
 const chatLimiter = rateLimit({
   windowMs: 60 * 1000,
   max: 10,
-  message: { success: false, message: 'Too many chat requests. Please wait a minute.' }
+  message: { success: false, message: 'Rate limit exceeded', error: 'Too many chat requests. Please wait a minute.' }
 });
 
 const createChat = async (req, res, next) => {
@@ -33,8 +33,28 @@ const createChat = async (req, res, next) => {
 
 const getMyChats = async (req, res, next) => {
   try {
-    const chats = await Chat.find({ userId: req.user.id }).sort({ createdAt: -1 }).limit(100);
-    return res.status(200).json({ success: true, message: 'Chat history fetched', data: chats });
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 50);
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      Chat.find({ userId: req.user.id }).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Chat.countDocuments({ userId: req.user.id })
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Chat history fetched',
+      data: {
+        items,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.max(Math.ceil(total / limit), 1)
+        }
+      }
+    });
   } catch (error) {
     return next(error);
   }

@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { pool, connectMongo, connectPostgres } = require('../config/db');
+const { pool, connectMongo, connectPostgres, closeConnections } = require('../config/db');
 const { logger } = require('./logger');
 
 const hospitals = [
@@ -44,10 +44,18 @@ const diseases = [
     await connectMongo();
 
     for (const h of hospitals) {
-      await pool.query(
-        'INSERT INTO hospitals (name, city, address, phone, latitude, longitude) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING',
-        h
+      const [name, city, address, phone, latitude, longitude] = h;
+      const exists = await pool.query(
+        'SELECT id FROM hospitals WHERE LOWER(name)=LOWER($1) AND LOWER(city)=LOWER($2) AND LOWER(address)=LOWER($3) LIMIT 1',
+        [name, city, address]
       );
+
+      if (exists.rowCount === 0) {
+        await pool.query(
+          'INSERT INTO hospitals (name, city, address, phone, latitude, longitude) VALUES ($1, $2, $3, $4, $5, $6)',
+          [name, city, address, phone, latitude, longitude]
+        );
+      }
     }
 
     for (const d of diseases) {
@@ -57,10 +65,12 @@ const diseases = [
       );
     }
 
-    logger.info('Seed data inserted');
+    logger.info('Seed data inserted without duplicates');
+    await closeConnections();
     process.exit(0);
   } catch (error) {
     logger.error('Seed failed', error);
+    await closeConnections();
     process.exit(1);
   }
 })();

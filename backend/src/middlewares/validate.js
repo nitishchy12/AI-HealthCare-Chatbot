@@ -3,7 +3,11 @@ const Joi = require('joi');
 module.exports = (schema) => (req, _res, next) => {
   const { error } = schema.validate(req.body, { abortEarly: false, stripUnknown: true });
   if (error) {
-    return next({ statusCode: 400, message: error.details.map((d) => d.message).join(', ') });
+    return next({
+      statusCode: 400,
+      message: 'Validation error',
+      error: error.details.map((d) => d.message).join(', ')
+    });
   }
   return next();
 };

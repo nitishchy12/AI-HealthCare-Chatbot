@@ -10,7 +10,32 @@ A full-stack final year capstone project designed at practical SDE-1 level.
   - PostgreSQL for users, hospitals, disease info
   - MongoDB for chat history and AI response logs
 - Auth: JWT + bcrypt
-- Security: Helmet, CORS, validation, sanitization, rate limiting
+- Security: Helmet, CORS, validation, sanitization, rate limiting, request IDs
+
+## Architecture Diagram
+
+```text
+[React Frontend]
+    |
+    v
+[Express API Layer]
+    |- Auth Controller (JWT + bcrypt)
+    |- Chat Controller (AI + fallback + pagination)
+    |- Hospital Controller
+    |- Disease Controller (admin managed)
+    |
+    v
+[Service Layer]
+    |- AI Service (LLM API call + fallback logic)
+    |
+    +----> [PostgreSQL]
+    |        |- users
+    |        |- hospitals
+    |        |- diseases
+    |
+    +----> [MongoDB]
+             |- chats
+```
 
 ## Folder Structure
 
@@ -30,11 +55,28 @@ ai-public-health-chatbot/
 - Risk level classification (Low / Medium / High)
 - Hospital search by city
 - Chat history per user
+- Chat history pagination (`page`, `limit`)
 - Admin panel:
   - Add hospital
   - Add verified disease info
 - Input validation and centralized error handling
 - AI fallback handling using verified disease data
+- Request ID tracking in logs and error responses
+- Health check endpoint for ops readiness
+
+## Health Endpoint
+
+- `GET /api/health`
+
+Example response:
+
+```json
+{
+  "status": "OK",
+  "uptime": "12345s",
+  "database": "connected"
+}
+```
 
 ## System Flow
 
@@ -43,11 +85,11 @@ ai-public-health-chatbot/
 3. Backend validates and sanitizes input.
 4. AI service returns structured response.
 5. Response is stored in MongoDB and sent to frontend.
-6. If AI fails, backend returns verified fallback data from PostgreSQL disease table.
+6. If AI fails, backend uses disease-name matching from PostgreSQL and returns fallback advisory.
 
 ## API Response Format
 
-All endpoints use consistent format:
+Success format:
 
 ```json
 {
@@ -57,39 +99,89 @@ All endpoints use consistent format:
 }
 ```
 
+Error format:
+
+```json
+{
+  "success": false,
+  "message": "Validation error",
+  "error": "Email is required",
+  "requestId": "abcd-1234"
+}
+```
+
 ## Important Endpoints
 
 - `POST /api/auth/register`
-- `POST /api/auth/login`
-- `POST /api/chat` (Protected + rate-limited)
-- `GET /api/chat/history` (Protected)
+- `POST /api/auth/login` (rate-limited)
+- `POST /api/chat` (protected + rate-limited)
+- `GET /api/chat/history?page=1&limit=10` (protected)
 - `GET /api/hospitals?city=<city>`
-- `POST /api/hospitals` (Admin only)
+- `POST /api/hospitals` (admin only)
 - `GET /api/diseases`
-- `POST /api/diseases` (Admin only)
+- `POST /api/diseases` (admin only)
+- `GET /api/health`
 
-## Environment Variables
+## Database Schema Explanation
 
-### Backend (`backend/.env`)
+### PostgreSQL (structured relational data)
 
-Use `backend/.env.example` as reference:
+- `users`: identity, credentials, role
+- `hospitals`: fixed attributes and search by city
+- `diseases`: verified disease awareness content used for fallback
 
-- `PORT`
-- `NODE_ENV`
-- `JWT_SECRET`
-- `JWT_EXPIRES_IN`
-- `POSTGRES_URI`
-- `MONGO_URI`
-- `AI_PROVIDER`
-- `AI_API_KEY`
-- `AI_MODEL`
-- `FRONTEND_URL`
+### MongoDB (flexible chat records)
 
-### Frontend (`frontend/.env`)
+- `chats`: each user query + structured AI output + risk level + timestamps
 
-Use `frontend/.env.example` as reference:
+### Why PostgreSQL + MongoDB?
 
-- `VITE_API_BASE_URL`
+- PostgreSQL gives strong constraints for auth/admin data.
+- MongoDB fits dynamic chat payloads and history growth.
+- This split keeps data modeling practical and easy to explain.
+
+## AI Prompt and Fallback Logic
+
+- AI integration is API-based (no custom model training).
+- Prompt asks for strict JSON output with fixed keys.
+- Response parser validates and normalizes risk level.
+- If AI fails:
+  - query is matched against `diseases.disease_name` using case-insensitive containment logic
+  - if matched, return verified disease details
+  - else, return a safe general advisory
+
+## Risk Classification Logic
+
+Risk classification is based on rule-based symptom severity mapping combined with AI context interpretation.
+
+- High: emergency-like terms (example: chest pain, breathing difficulty)
+- Medium: moderate concern terms (example: fever, persistent pain)
+- Low: general awareness level
+
+## Security Implemented
+
+- Password hashing with bcrypt
+- JWT authentication middleware
+- Role-based middleware for admin routes
+- Input validation using Joi
+- Input sanitization using sanitize-html
+- Rate limiting for chat endpoint
+- Additional rate limiting on login endpoint
+- Centralized error handling with request ID
+- Structured logging
+
+## Operational Readiness
+
+- Startup fails fast if PostgreSQL or MongoDB connection fails
+- Graceful shutdown on `SIGINT` / `SIGTERM`
+- DB connections are closed before exit
+- Health check available for Docker/CI monitoring
+
+## Trade-offs
+
+- LLM API is used instead of self-trained NLP model to keep scope realistic for capstone timeline.
+- Rule-based risk mapping is simple and explainable but not a clinical diagnostic model.
+- Dual database setup adds slight complexity but improves data-model fit.
 
 ## Local Setup
 
@@ -112,22 +204,31 @@ copy .env.example .env
 npm run dev
 ```
 
+## Environment Variables
+
+### Backend (`backend/.env`)
+
+- `PORT`
+- `NODE_ENV`
+- `JWT_SECRET`
+- `JWT_EXPIRES_IN`
+- `POSTGRES_URI`
+- `MONGO_URI`
+- `AI_PROVIDER`
+- `AI_API_KEY`
+- `AI_MODEL`
+- `FRONTEND_URL`
+
+### Frontend (`frontend/.env`)
+
+- `VITE_API_BASE_URL`
+
 ## Default Notes for Demo
 
 - Seed script inserts 20 hospitals and 10 disease records.
+- Seed script is idempotent and avoids duplicates.
 - Register a user normally.
 - Admin role can be assigned directly in PostgreSQL `users` table (`role = 'admin'`) for demo.
-
-## Security Implemented
-
-- Password hashing with bcrypt
-- JWT authentication middleware
-- Role-based middleware for admin routes
-- Input validation using Joi
-- Input sanitization using sanitize-html
-- Rate limiting for chat endpoint
-- Centralized error handling
-- Basic structured logging
 
 ## Disclaimer
 
@@ -137,8 +238,8 @@ Every AI response includes:
 
 ## Future Scope
 
-- Replace simulated AI service with real API integration
-- Add multilingual support
-- Add map-based hospital distance search
-- Add refresh tokens and email verification
-- Add automated tests and CI pipeline
+- Multilingual support
+- Geolocation-based nearest hospital suggestions
+- Better risk scoring using medical protocol data
+- Automated test coverage and CI checks
+- Optional doctor escalation workflow for high-risk cases

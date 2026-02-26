@@ -24,6 +24,12 @@ body {
   background: #0c2d57;
 }
 
+.nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .brand, .nav a, .nav button {
   color: #fff;
   text-decoration: none;
@@ -85,6 +91,7 @@ textarea {
   border-radius: 10px;
   padding: 12px;
   margin-bottom: 12px;
+  overflow-wrap: anywhere;
 }
 
 .error {
@@ -112,6 +119,48 @@ textarea {
   color: #555;
 }
 
+.skeleton-card {
+  height: 120px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  background: linear-gradient(90deg, #edf3fb 25%, #dfe8f5 40%, #edf3fb 60%);
+  background-size: 200% 100%;
+  animation: shimmer 1.1s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toast {
+  position: fixed;
+  right: 16px;
+  top: 16px;
+  background: #be1f2d;
+  color: #fff;
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 9999;
+}
+
+.toast button {
+  background: #fff;
+  color: #be1f2d;
+  border: 0;
+  border-radius: 4px;
+  padding: 3px 8px;
+}
+
 @media (max-width: 700px) {
   .nav {
     flex-direction: column;
@@ -121,5 +170,15 @@ textarea {
 
   .form-inline {
     flex-direction: column;
+  }
+
+  .pager {
+    flex-wrap: wrap;
+  }
+
+  .toast {
+    left: 12px;
+    right: 12px;
+    top: 12px;
   }
 }

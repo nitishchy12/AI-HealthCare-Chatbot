@@ -10,4 +10,13 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const message = error?.response?.data?.error || error?.response?.data?.message || 'Something went wrong';
+    window.dispatchEvent(new CustomEvent('app:error', { detail: { message } }));
+    return Promise.reject(error);
+  }
+);
+
 export default api;
