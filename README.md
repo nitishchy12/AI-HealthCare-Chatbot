@@ -1,6 +1,6 @@
 # AI-Driven Public Health Chatbot for Disease Awareness
 
-A full-stack final year capstone project designed at practical SDE-1 level.
+A full-stack healthcare project designed with practical production-style engineering.
 
 ## Tech Stack
 
@@ -179,7 +179,7 @@ Risk classification is based on rule-based symptom severity mapping combined wit
 
 ## Trade-offs
 
-- LLM API is used instead of self-trained NLP model to keep scope realistic for capstone timeline.
+- LLM API is used instead of self-trained NLP model to keep project scope practical and implementation-focused.
 - Rule-based risk mapping is simple and explainable but not a clinical diagnostic model.
 - Dual database setup adds slight complexity but improves data-model fit.
 
@@ -243,3 +243,4 @@ Every AI response includes:
 - Better risk scoring using medical protocol data
 - Automated test coverage and CI checks
 - Optional doctor escalation workflow for high-risk cases
+
