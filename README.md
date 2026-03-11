@@ -195,6 +195,8 @@ npm run seed
 npm run dev
 ```
 
+If local PostgreSQL is already using port `5432`, run the Docker PostgreSQL container on `5433` and keep `POSTGRES_URI` aligned with `backend/.env.example`.
+
 ### 2) Frontend setup
 
 ```bash

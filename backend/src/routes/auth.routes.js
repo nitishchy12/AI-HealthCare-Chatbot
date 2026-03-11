@@ -1,7 +1,8 @@
 const router = require('express').Router();
 const rateLimit = require('express-rate-limit');
 const { register, login } = require('../controllers/auth.controller');
-const validate, { schemas } = require('../middlewares/validate');
+const validate = require('../middlewares/validate');
+const { schemas } = require('../middlewares/validate');
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
