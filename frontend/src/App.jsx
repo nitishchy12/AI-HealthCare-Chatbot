@@ -9,6 +9,10 @@ import DashboardPage from './pages/DashboardPage';
 import ChatbotPage from './pages/ChatbotPage';
 import HospitalsPage from './pages/HospitalsPage';
 import AdminPage from './pages/AdminPage';
+import SymptomCheckerPage from './pages/SymptomCheckerPage';
+import HealthHistoryPage from './pages/HealthHistoryPage';
+import HealthReportsPage from './pages/HealthReportsPage';
+import HealthTipsPage from './pages/HealthTipsPage';
 import NotFoundPage from './pages/NotFoundPage';
 import GlobalToast from './components/GlobalToast';
 
@@ -35,8 +39,12 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/hospitals" element={<HospitalsPage />} />
+        <Route path="/tips" element={<HealthTipsPage />} />
         <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         <Route path="/chat" element={<ProtectedRoute><ChatbotPage /></ProtectedRoute>} />
+        <Route path="/symptom-checker" element={<ProtectedRoute><SymptomCheckerPage /></ProtectedRoute>} />
+        <Route path="/history" element={<ProtectedRoute><HealthHistoryPage /></ProtectedRoute>} />
+        <Route path="/reports" element={<ProtectedRoute><HealthReportsPage /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute adminOnly><AdminPage /></ProtectedRoute>} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

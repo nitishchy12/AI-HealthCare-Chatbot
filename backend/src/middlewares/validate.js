@@ -31,7 +31,9 @@ module.exports.schemas = {
     address: Joi.string().min(5).max(250).required(),
     phone: Joi.string().allow('', null),
     latitude: Joi.string().allow('', null),
-    longitude: Joi.string().allow('', null)
+    longitude: Joi.string().allow('', null),
+    rating: Joi.number().min(1).max(5).allow(null),
+    specialization: Joi.string().min(2).max(100).allow('', null)
   }),
   disease: Joi.object({
     disease_name: Joi.string().min(2).max(120).required(),
@@ -39,5 +41,17 @@ module.exports.schemas = {
     prevention: Joi.string().min(5).required(),
     treatment: Joi.string().min(5).required(),
     risk_factors: Joi.string().min(5).required()
+  }),
+  symptomCheck: Joi.object({
+    symptoms: Joi.array().items(Joi.string().min(2)).min(1).required(),
+    feverDays: Joi.number().min(0).max(30).required(),
+    breathingDifficulty: Joi.boolean().required(),
+    chestPain: Joi.boolean().required(),
+    fatigueLevel: Joi.string().valid('Low', 'Medium', 'High').required()
+  }),
+  tip: Joi.object({
+    title: Joi.string().min(3).max(160).required(),
+    description: Joi.string().min(5).max(500).required(),
+    category: Joi.string().min(2).max(80).required()
   })
 };

@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { addDisease, addHospital } from '../services/health.service';
+import { addDisease, addHealthTip, addHospital } from '../services/health.service';
 
 function AdminPage() {
-  const [hospital, setHospital] = useState({ name: '', city: '', address: '', phone: '' });
+  const [hospital, setHospital] = useState({ name: '', city: '', address: '', phone: '', specialization: '', rating: 4.2 });
   const [disease, setDisease] = useState({ disease_name: '', symptoms: '', prevention: '', treatment: '', risk_factors: '' });
+  const [tip, setTip] = useState({ title: '', description: '', category: '' });
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -14,7 +15,7 @@ function AdminPage() {
     try {
       await addHospital(hospital);
       setMessage('Hospital added successfully');
-      setHospital({ name: '', city: '', address: '', phone: '' });
+      setHospital({ name: '', city: '', address: '', phone: '', specialization: '', rating: 4.2 });
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to add hospital');
     }
@@ -33,6 +34,19 @@ function AdminPage() {
     }
   };
 
+  const submitTip = async (e) => {
+    e.preventDefault();
+    setError('');
+    setMessage('');
+    try {
+      await addHealthTip(tip);
+      setMessage('Health tip added successfully');
+      setTip({ title: '', description: '', category: '' });
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to add health tip');
+    }
+  };
+
   return (
     <section className="page">
       <div className="card">
@@ -47,6 +61,8 @@ function AdminPage() {
           <input value={hospital.city} onChange={(e) => setHospital({ ...hospital, city: e.target.value })} placeholder="City" required />
           <input value={hospital.address} onChange={(e) => setHospital({ ...hospital, address: e.target.value })} placeholder="Address" required />
           <input value={hospital.phone} onChange={(e) => setHospital({ ...hospital, phone: e.target.value })} placeholder="Phone" />
+          <input value={hospital.specialization} onChange={(e) => setHospital({ ...hospital, specialization: e.target.value })} placeholder="Specialization" />
+          <input type="number" min="1" max="5" step="0.1" value={hospital.rating} onChange={(e) => setHospital({ ...hospital, rating: Number(e.target.value) })} placeholder="Rating" />
           <button className="btn" type="submit">Save Hospital</button>
         </form>
       </div>
@@ -59,6 +75,15 @@ function AdminPage() {
           <textarea value={disease.treatment} onChange={(e) => setDisease({ ...disease, treatment: e.target.value })} placeholder="Treatment" required />
           <textarea value={disease.risk_factors} onChange={(e) => setDisease({ ...disease, risk_factors: e.target.value })} placeholder="Risk factors" required />
           <button className="btn" type="submit">Save Disease Info</button>
+        </form>
+      </div>
+      <div className="card">
+        <h3>Add Health Tip</h3>
+        <form onSubmit={submitTip} className="form">
+          <input value={tip.title} onChange={(e) => setTip({ ...tip, title: e.target.value })} placeholder="Tip title" required />
+          <input value={tip.category} onChange={(e) => setTip({ ...tip, category: e.target.value })} placeholder="Category" required />
+          <textarea value={tip.description} onChange={(e) => setTip({ ...tip, description: e.target.value })} placeholder="Description" required />
+          <button className="btn" type="submit">Save Health Tip</button>
         </form>
       </div>
     </section>

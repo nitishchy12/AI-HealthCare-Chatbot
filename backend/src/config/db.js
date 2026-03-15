@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS hospitals (
   phone VARCHAR(20),
   latitude VARCHAR(25),
   longitude VARCHAR(25),
+  rating NUMERIC(2,1) NOT NULL DEFAULT 4.2,
+  specialization VARCHAR(100) NOT NULL DEFAULT 'General Physician',
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
@@ -34,6 +36,14 @@ CREATE TABLE IF NOT EXISTS diseases (
   prevention TEXT NOT NULL,
   treatment TEXT NOT NULL,
   risk_factors TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS health_tips (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(160) NOT NULL,
+  description TEXT NOT NULL,
+  category VARCHAR(80) NOT NULL DEFAULT 'General Wellness',
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 `;
@@ -51,6 +61,16 @@ const ensureConstraints = async () => {
       WHEN duplicate_object THEN
         NULL;
     END $$;
+  `);
+
+  await pool.query(`
+    ALTER TABLE hospitals
+    ADD COLUMN IF NOT EXISTS rating NUMERIC(2,1) NOT NULL DEFAULT 4.2;
+  `);
+
+  await pool.query(`
+    ALTER TABLE hospitals
+    ADD COLUMN IF NOT EXISTS specialization VARCHAR(100) NOT NULL DEFAULT 'General Physician';
   `);
 };
 

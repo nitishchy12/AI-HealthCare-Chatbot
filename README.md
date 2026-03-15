@@ -51,18 +51,33 @@ ai-public-health-chatbot/
 - User register/login
 - JWT protected routes
 - Chat interface for health questions
+- Guided symptom checker with follow-up questions and risk score
 - AI-generated structured response
 - Risk level classification (Low / Medium / High)
-- Hospital search by city
-- Chat history per user
+- Hospital search by city with specialist recommendation
+- Health history timeline per user
+- AI-generated health report with printable PDF export
+- Daily health tips page
 - Chat history pagination (`page`, `limit`)
 - Admin panel:
   - Add hospital
   - Add verified disease info
+  - Add health tips
 - Input validation and centralized error handling
 - AI fallback handling using verified disease data
 - Request ID tracking in logs and error responses
 - Health check endpoint for ops readiness
+
+## Main Pages
+
+- Dashboard
+- AI Chatbot
+- Symptom Checker
+- Hospitals
+- Health History
+- Health Reports
+- Health Tips
+- Admin Panel
 
 ## Health Endpoint
 
@@ -116,10 +131,15 @@ Error format:
 - `POST /api/auth/login` (rate-limited)
 - `POST /api/chat` (protected + rate-limited)
 - `GET /api/chat/history?page=1&limit=10` (protected)
+- `POST /api/symptoms` (protected)
+- `GET /api/history` (protected)
+- `GET /api/reports` (protected)
 - `GET /api/hospitals?city=<city>`
 - `POST /api/hospitals` (admin only)
 - `GET /api/diseases`
 - `POST /api/diseases` (admin only)
+- `GET /api/tips`
+- `POST /api/tips` (admin only)
 - `GET /api/health`
 
 ## Database Schema Explanation
