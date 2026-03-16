@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { jsPDF } from 'jspdf';
 import { BarChart, Bar, CartesianGrid, LineChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { getHealthReport } from '../services/health.service';
 
@@ -14,6 +15,44 @@ function HealthReportsPage() {
     load();
   }, []);
 
+  const downloadPdf = () => {
+    if (!report) return;
+
+    const doc = new jsPDF();
+    const dateLabel = new Date().toISOString().slice(0, 10);
+    let y = 20;
+
+    const addSection = (title, lines) => {
+      doc.setFont('helvetica', 'bold');
+      doc.text(title, 14, y);
+      y += 8;
+      doc.setFont('helvetica', 'normal');
+      lines.forEach((line) => {
+        const wrapped = doc.splitTextToSize(line, 180);
+        doc.text(wrapped, 14, y);
+        y += wrapped.length * 6;
+      });
+      y += 4;
+    };
+
+    doc.setFontSize(18);
+    doc.text('User Health Report', 14, y);
+    y += 10;
+    doc.setFontSize(11);
+    doc.text(`Generated on: ${dateLabel}`, 14, y);
+    y += 10;
+
+    addSection('Recent Symptoms', report.recentSymptoms.length ? report.recentSymptoms : ['No recent symptoms available.']);
+    addSection('Risk Levels', [
+      `Risk Trend: ${report.riskTrend}`,
+      `Recent chats: ${report.recentChatsCount}`,
+      `Recent symptom checks: ${report.recentSymptomChecksCount}`
+    ]);
+    addSection('Recommendations', report.recommendations);
+
+    doc.save(`health-report-${dateLabel}.pdf`);
+  };
+
   return (
     <section className="page card print-card">
       <div className="report-header">
@@ -21,7 +60,7 @@ function HealthReportsPage() {
           <p className="eyebrow">AI Summary</p>
           <h2>Health Report</h2>
         </div>
-        <button className="btn" type="button" onClick={() => window.print()}>Download PDF Report</button>
+        <button className="btn" type="button" onClick={downloadPdf}>Download PDF Report</button>
       </div>
       {!report && <p>Generating report...</p>}
       {report && (

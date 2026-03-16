@@ -1,5 +1,18 @@
 import { useEffect, useState } from 'react';
-import { addDisease, addHealthTip, addHospital, deleteDisease, deleteHospital, getDiseases, getHospitalsByCity, updateDisease, updateHospital } from '../services/health.service';
+import {
+  addDisease,
+  addHealthTip,
+  addHospital,
+  deleteDisease,
+  deleteHealthTip,
+  deleteHospital,
+  getDiseases,
+  getHealthTips,
+  getHospitalsByCity,
+  updateDisease,
+  updateHealthTip,
+  updateHospital
+} from '../services/health.service';
 
 function AdminPage() {
   const [hospital, setHospital] = useState({ name: '', city: '', address: '', phone: '', specialization: '', rating: 4.2 });
@@ -9,14 +22,21 @@ function AdminPage() {
   const [error, setError] = useState('');
   const [diseaseList, setDiseaseList] = useState([]);
   const [hospitalList, setHospitalList] = useState([]);
+  const [tipList, setTipList] = useState([]);
   const [cityFilter, setCityFilter] = useState('Bhubaneswar');
   const [editingDiseaseId, setEditingDiseaseId] = useState(null);
   const [editingHospitalId, setEditingHospitalId] = useState(null);
+  const [editingTipId, setEditingTipId] = useState(null);
+
+  const resetHospital = () => setHospital({ name: '', city: '', address: '', phone: '', specialization: '', rating: 4.2 });
+  const resetDisease = () => setDisease({ disease_name: '', symptoms: '', prevention: '', treatment: '', risk_factors: '' });
+  const resetTip = () => setTip({ title: '', description: '', category: '' });
 
   const loadAdminData = async (city = cityFilter) => {
-    const [diseaseRes, hospitalRes] = await Promise.all([getDiseases(), getHospitalsByCity(city)]);
+    const [diseaseRes, hospitalRes, tipRes] = await Promise.all([getDiseases(), getHospitalsByCity(city), getHealthTips()]);
     setDiseaseList(diseaseRes.data || []);
     setHospitalList(hospitalRes.data || []);
+    setTipList(tipRes.data || []);
   };
 
   useEffect(() => {
@@ -35,11 +55,11 @@ function AdminPage() {
         await addHospital(hospital);
         setMessage('Hospital added successfully');
       }
-      setHospital({ name: '', city: '', address: '', phone: '', specialization: '', rating: 4.2 });
+      resetHospital();
       setEditingHospitalId(null);
       await loadAdminData(hospital.city || cityFilter);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to add hospital');
+      setError(err.response?.data?.message || 'Failed to save hospital');
     }
   };
 
@@ -55,11 +75,11 @@ function AdminPage() {
         await addDisease(disease);
         setMessage('Disease info added successfully');
       }
-      setDisease({ disease_name: '', symptoms: '', prevention: '', treatment: '', risk_factors: '' });
+      resetDisease();
       setEditingDiseaseId(null);
       await loadAdminData();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to add disease info');
+      setError(err.response?.data?.message || 'Failed to save disease info');
     }
   };
 
@@ -68,11 +88,18 @@ function AdminPage() {
     setError('');
     setMessage('');
     try {
-      await addHealthTip(tip);
-      setMessage('Health tip added successfully');
-      setTip({ title: '', description: '', category: '' });
+      if (editingTipId) {
+        await updateHealthTip(editingTipId, tip);
+        setMessage('Health tip updated successfully');
+      } else {
+        await addHealthTip(tip);
+        setMessage('Health tip added successfully');
+      }
+      resetTip();
+      setEditingTipId(null);
+      await loadAdminData();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to add health tip');
+      setError(err.response?.data?.message || 'Failed to save health tip');
     }
   };
 
@@ -88,6 +115,12 @@ function AdminPage() {
     await loadAdminData();
   };
 
+  const handleDeleteTip = async (id) => {
+    await deleteHealthTip(id);
+    setMessage('Health tip deleted successfully');
+    await loadAdminData();
+  };
+
   return (
     <section className="page">
       <div className="card">
@@ -95,6 +128,7 @@ function AdminPage() {
         {message && <p className="success">{message}</p>}
         {error && <p className="error">{error}</p>}
       </div>
+
       <div className="card">
         <h3>{editingHospitalId ? 'Edit Hospital' : 'Add Hospital'}</h3>
         <form onSubmit={submitHospital} className="form">
@@ -107,6 +141,7 @@ function AdminPage() {
           <button className="btn" type="submit">Save Hospital</button>
         </form>
       </div>
+
       <div className="card">
         <h3>{editingDiseaseId ? 'Edit Disease Info' : 'Add Disease Info'}</h3>
         <form onSubmit={submitDisease} className="form">
@@ -118,8 +153,9 @@ function AdminPage() {
           <button className="btn" type="submit">Save Disease Info</button>
         </form>
       </div>
+
       <div className="card">
-        <h3>Add Health Tip</h3>
+        <h3>{editingTipId ? 'Edit Health Tip' : 'Add Health Tip'}</h3>
         <form onSubmit={submitTip} className="form">
           <input value={tip.title} onChange={(e) => setTip({ ...tip, title: e.target.value })} placeholder="Tip title" required />
           <input value={tip.category} onChange={(e) => setTip({ ...tip, category: e.target.value })} placeholder="Category" required />
@@ -127,6 +163,7 @@ function AdminPage() {
           <button className="btn" type="submit">Save Health Tip</button>
         </form>
       </div>
+
       <div className="card">
         <div className="section-head">
           <h3>Manage Diseases</h3>
@@ -144,6 +181,7 @@ function AdminPage() {
           </article>
         ))}
       </div>
+
       <div className="card">
         <div className="section-head">
           <h3>Manage Hospitals</h3>
@@ -153,11 +191,39 @@ function AdminPage() {
           <article key={item.id} className="manage-row">
             <div>
               <strong>{item.name}</strong>
-              <p>{item.city} | {item.specialization} | ⭐ {item.rating}</p>
+              <p>{item.city} | {item.specialization} | Rating {item.rating}</p>
             </div>
             <div className="actions">
               <button type="button" className="btn secondary-btn" onClick={() => { setHospital(item); setEditingHospitalId(item.id); }}>Edit</button>
               <button type="button" className="btn" onClick={() => handleDeleteHospital(item.id)}>Delete</button>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <div className="card">
+        <div className="section-head">
+          <h3>Manage Health Tips</h3>
+        </div>
+        {tipList.map((item) => (
+          <article key={item.id} className="manage-row">
+            <div>
+              <strong>{item.title}</strong>
+              <p>{item.category}</p>
+              <p>{item.description}</p>
+            </div>
+            <div className="actions">
+              <button
+                type="button"
+                className="btn secondary-btn"
+                onClick={() => {
+                  setTip({ title: item.title, description: item.description, category: item.category });
+                  setEditingTipId(item.id);
+                }}
+              >
+                Edit
+              </button>
+              <button type="button" className="btn" onClick={() => handleDeleteTip(item.id)}>Delete</button>
             </div>
           </article>
         ))}

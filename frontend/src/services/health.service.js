@@ -19,6 +19,8 @@ export const getHealthHistory = async () => (await api.get('/history')).data;
 export const getHealthReport = async () => (await api.get('/reports')).data;
 export const getHealthTips = async () => (await api.get('/tips')).data;
 export const addHealthTip = async (payload) => (await api.post('/tips', payload)).data;
+export const updateHealthTip = async (id, payload) => (await api.put(`/tips/${id}`, payload)).data;
+export const deleteHealthTip = async (id) => (await api.delete(`/tips/${id}`)).data;
 export const getProfile = async () => (await api.get('/profile')).data;
 export const updateProfile = async (payload) => (await api.put('/profile', payload)).data;
 export const getNotifications = async () => (await api.get('/notifications')).data;

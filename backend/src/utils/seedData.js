@@ -22,7 +22,17 @@ const hospitals = [
   ['Care Plus', 'Kolkata', 'Salt Lake', '9876543226', '22.5867', '88.4172', 4.6, 'Neurologist'],
   ['Unity Medical', 'Kolkata', 'Park Street', '9876543227', '22.5519', '88.3522', 4.3, 'General Physician'],
   ['Prime Hospital', 'Jaipur', 'Malviya Nagar', '9876543228', '26.8506', '75.8060', 4.5, 'Cardiologist'],
-  ['Guardian Hospital', 'Jaipur', 'Vaishali Nagar', '9876543229', '26.9124', '75.7499', 4.1, 'General Physician']
+  ['Guardian Hospital', 'Jaipur', 'Vaishali Nagar', '9876543229', '26.9124', '75.7499', 4.1, 'General Physician'],
+  ['Skyline Multispeciality', 'Ahmedabad', 'SG Highway', '9876543230', '23.0434', '72.5293', 4.7, 'Cardiologist'],
+  ['Riverfront Care', 'Ahmedabad', 'Ashram Road', '9876543231', '23.0258', '72.5714', 4.4, 'General Physician'],
+  ['Coastal Health Center', 'Visakhapatnam', 'Beach Road', '9876543232', '17.6868', '83.2185', 4.6, 'Pulmonologist'],
+  ['Harbor City Clinic', 'Visakhapatnam', 'MVP Colony', '9876543233', '17.7420', '83.3362', 4.2, 'Pediatrician'],
+  ['Lotus Wellness Hospital', 'Lucknow', 'Gomti Nagar', '9876543234', '26.8467', '80.9462', 4.5, 'Neurologist'],
+  ['North Care Hospital', 'Lucknow', 'Hazratganj', '9876543235', '26.8500', '80.9499', 4.3, 'General Physician'],
+  ['Blue Oak Medical', 'Indore', 'Vijay Nagar', '9876543236', '22.7533', '75.8937', 4.4, 'Cardiologist'],
+  ['Sarthak Health Hub', 'Indore', 'Palasia', '9876543237', '22.7196', '75.8577', 4.1, 'General Physician'],
+  ['Meadow Hospital', 'Nagpur', 'Dharampeth', '9876543238', '21.1458', '79.0882', 4.6, 'Pulmonologist'],
+  ['Orange City Medical', 'Nagpur', 'Sitabuldi', '9876543239', '21.1466', '79.0888', 4.2, 'General Physician']
 ];
 
 const diseases = [
@@ -35,14 +45,35 @@ const diseases = [
   ['Asthma', 'Wheezing, breathlessness, chest tightness', 'Avoid triggers like dust and smoke', 'Inhalers and doctor follow-up', 'Allergies, pollution'],
   ['Tuberculosis', 'Long cough, weight loss, night sweats', 'Early diagnosis and mask usage', 'Complete anti-TB treatment', 'Close contact with infected person'],
   ['Food Poisoning', 'Nausea, vomiting, diarrhea, cramps', 'Eat hygienic fresh food', 'ORS, hydration, medical help if severe', 'Contaminated food'],
-  ['Dehydration', 'Dry mouth, fatigue, dark urine', 'Drink sufficient water daily', 'Oral fluids, emergency care if severe', 'Heat exposure, low intake']
+  ['Dehydration', 'Dry mouth, fatigue, dark urine', 'Drink sufficient water daily', 'Oral fluids, emergency care if severe', 'Heat exposure, low intake'],
+  ['Viral Fever', 'Mild fever, body ache, fatigue', 'Rest, fluids, and hygiene', 'Symptom monitoring and doctor advice if prolonged', 'Seasonal infection exposure'],
+  ['Migraine', 'Severe headache, nausea, light sensitivity', 'Manage stress and avoid triggers', 'Pain relief under medical advice', 'Sleep issues, stress, family history'],
+  ['Anemia', 'Weakness, pale skin, dizziness', 'Iron-rich diet and regular checkups', 'Medical evaluation and supplements if advised', 'Poor diet, blood loss'],
+  ['GERD', 'Acidity, chest burning, sour taste', 'Avoid oily foods and late-night meals', 'Doctor guidance and lifestyle changes', 'Spicy food, obesity'],
+  ['Common Cold', 'Sneezing, cough, runny nose', 'Hand washing and rest', 'Home care and doctor visit if worsening', 'Viral exposure']
 ];
 
 const tips = [
   ['Hydration Reminder', 'Drink 2 to 3 liters of water daily unless a doctor advised otherwise.', 'Hydration'],
   ['Sleep Routine', 'Aim for at least 7 hours of sleep to support recovery and immunity.', 'Lifestyle'],
   ['Avoid Self Medication', 'Do not start antibiotics or strong medicines without medical advice.', 'Safety'],
-  ['Daily Movement', 'Even 20 to 30 minutes of walking can improve energy and circulation.', 'Fitness']
+  ['Daily Movement', 'Even 20 to 30 minutes of walking can improve energy and circulation.', 'Fitness'],
+  ['Balanced Meals', 'Include protein, fruits, and vegetables in your daily meals for better recovery.', 'Nutrition'],
+  ['Wash Hands Often', 'Wash hands with soap for at least 20 seconds before meals and after public contact.', 'Hygiene'],
+  ['Use ORS Early', 'If diarrhea or vomiting starts, begin oral rehydration early and monitor fluid intake.', 'Safety'],
+  ['Protect Your Sleep', 'Avoid screens before bedtime and keep a fixed sleep schedule.', 'Lifestyle'],
+  ['Seasonal Protection', 'Use mosquito repellent and remove stagnant water during monsoon.', 'Prevention'],
+  ['Monitor Fever', 'If fever lasts more than 2 to 3 days, consult a doctor instead of waiting too long.', 'Awareness'],
+  ['Food Safety', 'Eat freshly cooked food and avoid uncovered street food in hot weather.', 'Nutrition'],
+  ['Breathing Check', 'Do not ignore wheezing or shortness of breath, especially if it feels new.', 'Respiratory'],
+  ['Stress Breaks', 'Take short breaks, stretch, and breathe deeply during long work sessions.', 'Mental Health'],
+  ['Stay Vaccinated', 'Follow recommended vaccines and booster schedules as advised by health authorities.', 'Prevention'],
+  ['Limit Sugary Drinks', 'Reduce high-sugar beverages and choose water or unsweetened drinks more often.', 'Nutrition'],
+  ['Heart Health Walk', 'A brisk walk most days of the week helps circulation and heart health.', 'Fitness'],
+  ['Check Blood Pressure', 'Adults should monitor blood pressure regularly if they have stress or family history.', 'Awareness'],
+  ['Screen Time Care', 'Rest your eyes and maintain good posture if you use screens for many hours.', 'Lifestyle'],
+  ['Clean Water First', 'Prefer filtered or boiled water when safe drinking water is uncertain.', 'Safety'],
+  ['Recovery Rest', 'During illness, sleep and hydration matter more than heavy activity.', 'Recovery']
 ];
 
 (async () => {

@@ -29,4 +29,43 @@ const addTip = async (req, res, next) => {
   }
 };
 
-module.exports = { listTips, addTip };
+const updateTip = async (req, res, next) => {
+  try {
+    const payload = {
+      title: clean(req.body.title),
+      description: clean(req.body.description),
+      category: clean(req.body.category || 'General Wellness')
+    };
+
+    const result = await pool.query(
+      `UPDATE health_tips
+       SET title = $1, description = $2, category = $3
+       WHERE id = $4
+       RETURNING *`,
+      [payload.title, payload.description, payload.category, req.params.id]
+    );
+
+    if (result.rowCount === 0) {
+      return next({ statusCode: 404, message: 'Health tip not found' });
+    }
+
+    return res.status(200).json({ success: true, message: 'Health tip updated', data: result.rows[0] });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const deleteTip = async (req, res, next) => {
+  try {
+    const result = await pool.query('DELETE FROM health_tips WHERE id = $1 RETURNING id', [req.params.id]);
+    if (result.rowCount === 0) {
+      return next({ statusCode: 404, message: 'Health tip not found' });
+    }
+
+    return res.status(200).json({ success: true, message: 'Health tip deleted', data: { id: req.params.id } });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+module.exports = { listTips, addTip, updateTip, deleteTip };
