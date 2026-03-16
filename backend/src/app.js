@@ -13,6 +13,8 @@ const symptomRoutes = require('./routes/symptom.routes');
 const historyRoutes = require('./routes/history.routes');
 const reportRoutes = require('./routes/report.routes');
 const tipRoutes = require('./routes/tip.routes');
+const profileRoutes = require('./routes/profile.routes');
+const notificationRoutes = require('./routes/notification.routes');
 const errorHandler = require('./middlewares/errorHandler');
 const requestContext = require('./middlewares/requestContext');
 const { getDbHealth } = require('./config/db');
@@ -56,6 +58,8 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/hospitals', hospitalRoutes);
 app.use('/api/diseases', diseaseRoutes);
 app.use('/api/tips', tipRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.use((req, _res, next) => {
   logger.warn('Route not found', { requestId: req.id, method: req.method, url: req.originalUrl });

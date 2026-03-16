@@ -14,14 +14,18 @@ const register = async (req, res, next) => {
     const name = clean(req.body.name);
     const email = clean(req.body.email).toLowerCase();
     const password = req.body.password;
+    const age = req.body.age || null;
+    const gender = clean(req.body.gender || '');
+    const medicalNotes = clean(req.body.medical_notes || '');
+    const city = clean(req.body.city || '');
 
     const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
     if (existing.rowCount > 0) return next({ statusCode: 400, message: 'Email already registered' });
 
     const hash = await bcrypt.hash(password, 10);
     const result = await pool.query(
-      'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email, role, created_at',
-      [name, email, hash]
+      'INSERT INTO users (name, email, password_hash, age, gender, medical_notes, city) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, name, email, role, age, gender, medical_notes, city, created_at',
+      [name, email, hash, age, gender || null, medicalNotes || null, city || null]
     );
 
     const token = signToken(result.rows[0]);
@@ -54,7 +58,16 @@ const login = async (req, res, next) => {
       success: true,
       message: 'Login successful',
       data: {
-        user: { id: user.id, name: user.name, email: user.email, role: user.role },
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          age: user.age,
+          gender: user.gender,
+          medical_notes: user.medical_notes,
+          city: user.city
+        },
         token
       }
     });

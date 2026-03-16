@@ -13,6 +13,7 @@ function Navbar() {
         {token && <Link to="/symptom-checker">Symptom Checker</Link>}
         {token && <Link to="/history">Health History</Link>}
         {token && <Link to="/reports">Reports</Link>}
+        {token && <Link to="/profile">Profile</Link>}
         <Link to="/tips">Health Tips</Link>
         <Link to="/hospitals">Hospitals</Link>
         {user?.role === 'admin' && <Link to="/admin">Admin</Link>}

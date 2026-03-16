@@ -13,6 +13,10 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(150) UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
   role VARCHAR(20) NOT NULL DEFAULT 'user',
+  age INTEGER,
+  gender VARCHAR(20),
+  medical_notes TEXT,
+  city VARCHAR(80),
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
@@ -61,6 +65,26 @@ const ensureConstraints = async () => {
       WHEN duplicate_object THEN
         NULL;
     END $$;
+  `);
+
+  await pool.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS age INTEGER;
+  `);
+
+  await pool.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS gender VARCHAR(20);
+  `);
+
+  await pool.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS medical_notes TEXT;
+  `);
+
+  await pool.query(`
+    ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS city VARCHAR(80);
   `);
 
   await pool.query(`

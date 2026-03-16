@@ -33,7 +33,7 @@ const buildRecommendations = (riskLevel, emergency) => {
   return base;
 };
 
-const analyzeSymptoms = ({ symptoms, feverDays, breathingDifficulty, chestPain, fatigueLevel }) => {
+const analyzeSymptoms = ({ symptoms, feverDays, breathingDifficulty, chestPain, fatigueLevel, age }) => {
   let score = Math.min(symptoms.length * 2, 6);
 
   if (feverDays >= 3) score += 2;
@@ -41,6 +41,7 @@ const analyzeSymptoms = ({ symptoms, feverDays, breathingDifficulty, chestPain, 
   if (chestPain) score += 3;
   if (fatigueLevel === 'Medium') score += 1;
   if (fatigueLevel === 'High') score += 2;
+  if (age >= 60 && (breathingDifficulty || chestPain)) score += 2;
 
   const emergency = breathingDifficulty || chestPain;
   let riskLevel = 'Low';
@@ -58,12 +59,15 @@ const analyzeSymptoms = ({ symptoms, feverDays, breathingDifficulty, chestPain, 
 
 const createSymptomCheck = async (req, res, next) => {
   try {
+    const userResult = await require('../config/db').pool.query('SELECT age FROM users WHERE id = $1', [req.user.id]);
+    const age = userResult.rows[0]?.age || 0;
     const payload = {
       symptoms: req.body.symptoms,
       feverDays: Number(req.body.feverDays || 0),
       breathingDifficulty: Boolean(req.body.breathingDifficulty),
       chestPain: Boolean(req.body.chestPain),
-      fatigueLevel: req.body.fatigueLevel || 'Low'
+      fatigueLevel: req.body.fatigueLevel || 'Low',
+      age
     };
 
     const analysis = analyzeSymptoms(payload);

@@ -13,6 +13,7 @@ import SymptomCheckerPage from './pages/SymptomCheckerPage';
 import HealthHistoryPage from './pages/HealthHistoryPage';
 import HealthReportsPage from './pages/HealthReportsPage';
 import HealthTipsPage from './pages/HealthTipsPage';
+import ProfilePage from './pages/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage';
 import GlobalToast from './components/GlobalToast';
 
@@ -45,6 +46,7 @@ function App() {
         <Route path="/symptom-checker" element={<ProtectedRoute><SymptomCheckerPage /></ProtectedRoute>} />
         <Route path="/history" element={<ProtectedRoute><HealthHistoryPage /></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><HealthReportsPage /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute adminOnly><AdminPage /></ProtectedRoute>} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

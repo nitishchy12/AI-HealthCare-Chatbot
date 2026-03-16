@@ -44,4 +44,42 @@ const addHospital = async (req, res, next) => {
   }
 };
 
-module.exports = { getByCity, addHospital };
+const updateHospital = async (req, res, next) => {
+  try {
+    const payload = {
+      name: clean(req.body.name),
+      city: clean(req.body.city),
+      address: clean(req.body.address),
+      phone: clean(req.body.phone || ''),
+      latitude: clean(req.body.latitude || ''),
+      longitude: clean(req.body.longitude || ''),
+      rating: req.body.rating || 4.2,
+      specialization: clean(req.body.specialization || 'General Physician')
+    };
+
+    const result = await pool.query(
+      `UPDATE hospitals
+       SET name = $1, city = $2, address = $3, phone = $4, latitude = $5, longitude = $6, rating = $7, specialization = $8
+       WHERE id = $9
+       RETURNING *`,
+      [payload.name, payload.city, payload.address, payload.phone, payload.latitude, payload.longitude, payload.rating, payload.specialization, req.params.id]
+    );
+
+    if (result.rowCount === 0) return next({ statusCode: 404, message: 'Hospital not found' });
+    return res.status(200).json({ success: true, message: 'Hospital updated', data: result.rows[0] });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const deleteHospital = async (req, res, next) => {
+  try {
+    const result = await pool.query('DELETE FROM hospitals WHERE id = $1 RETURNING id', [req.params.id]);
+    if (result.rowCount === 0) return next({ statusCode: 404, message: 'Hospital not found' });
+    return res.status(200).json({ success: true, message: 'Hospital deleted', data: { id: req.params.id } });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+module.exports = { getByCity, addHospital, updateHospital, deleteHospital };

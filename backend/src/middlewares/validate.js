@@ -16,7 +16,11 @@ module.exports.schemas = {
   register: Joi.object({
     name: Joi.string().min(2).max(100).required(),
     email: Joi.string().email().required(),
-    password: Joi.string().min(8).pattern(/[A-Z]/).pattern(/[0-9]/).required()
+    password: Joi.string().min(8).pattern(/[A-Z]/).pattern(/[0-9]/).required(),
+    age: Joi.number().min(1).max(120).allow(null),
+    gender: Joi.string().valid('Male', 'Female', 'Other', 'Prefer not to say').allow('', null),
+    medical_notes: Joi.string().max(500).allow('', null),
+    city: Joi.string().max(80).allow('', null)
   }),
   login: Joi.object({
     email: Joi.string().email().required(),
@@ -53,5 +57,12 @@ module.exports.schemas = {
     title: Joi.string().min(3).max(160).required(),
     description: Joi.string().min(5).max(500).required(),
     category: Joi.string().min(2).max(80).required()
+  }),
+  profile: Joi.object({
+    name: Joi.string().min(2).max(100).required(),
+    age: Joi.number().min(1).max(120).allow(null),
+    gender: Joi.string().valid('Male', 'Female', 'Other', 'Prefer not to say').allow('', null),
+    medical_notes: Joi.string().max(500).allow('', null),
+    city: Joi.string().max(80).allow('', null)
   })
 };

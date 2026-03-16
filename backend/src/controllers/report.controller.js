@@ -21,6 +21,20 @@ const getHealthReport = async (req, res, next) => {
       riskLevels.push(check.riskLevel);
     });
 
+    const symptomCounts = {};
+    recentChecks.forEach((check) => {
+      check.symptoms.forEach((symptom) => {
+        symptomCounts[symptom] = (symptomCounts[symptom] || 0) + 1;
+      });
+    });
+
+    const activity = [...recentChats, ...recentChecks]
+      .map((item) => new Date(item.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }))
+      .reduce((acc, date) => {
+        acc[date] = (acc[date] || 0) + 1;
+        return acc;
+      }, {});
+
     const uniqueSymptoms = [...new Set(symptomPool)].slice(0, 8);
     const currentRisk = riskLevels[0] || 'Low';
     const previousRisk = riskLevels[1] || currentRisk;
@@ -35,6 +49,9 @@ const getHealthReport = async (req, res, next) => {
           'Continue symptom monitoring and maintain hydration.',
           currentRisk === 'High' ? 'Visit a hospital or doctor immediately.' : 'Consult a doctor if symptoms persist.'
         ],
+        symptomChart: Object.entries(symptomCounts).map(([name, value]) => ({ name, value })),
+        riskChart: riskLevels.slice(0, 5).map((level, index) => ({ name: `Check ${index + 1}`, risk: level === 'High' ? 3 : level === 'Medium' ? 2 : 1 })),
+        activityChart: Object.entries(activity).map(([date, count]) => ({ date, count })),
         recentChatsCount: recentChats.length,
         recentSymptomChecksCount: recentChecks.length
       }

@@ -57,11 +57,14 @@ ai-public-health-chatbot/
 - Hospital search by city with specialist recommendation
 - Health history timeline per user
 - AI-generated health report with printable PDF export
+- Health report charts for symptom frequency, activity, and risk trend
 - Daily health tips page
+- User profile page with age, gender, city, and medical notes
+- Notifications panel with follow-up and awareness alerts
 - Chat history pagination (`page`, `limit`)
 - Admin panel:
-  - Add hospital
-  - Add verified disease info
+  - Add, edit, and delete hospitals
+  - Add, edit, and delete verified disease info
   - Add health tips
 - Input validation and centralized error handling
 - AI fallback handling using verified disease data
@@ -77,6 +80,7 @@ ai-public-health-chatbot/
 - Health History
 - Health Reports
 - Health Tips
+- User Profile
 - Admin Panel
 
 ## Health Endpoint
@@ -134,10 +138,17 @@ Error format:
 - `POST /api/symptoms` (protected)
 - `GET /api/history` (protected)
 - `GET /api/reports` (protected)
+- `GET /api/profile` (protected)
+- `PUT /api/profile` (protected)
+- `GET /api/notifications` (protected)
 - `GET /api/hospitals?city=<city>`
 - `POST /api/hospitals` (admin only)
+- `PUT /api/hospitals/:id` (admin only)
+- `DELETE /api/hospitals/:id` (admin only)
 - `GET /api/diseases`
 - `POST /api/diseases` (admin only)
+- `PUT /api/diseases/:id` (admin only)
+- `DELETE /api/diseases/:id` (admin only)
 - `GET /api/tips`
 - `POST /api/tips` (admin only)
 - `GET /api/health`

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { BarChart, Bar, CartesianGrid, LineChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { getHealthReport } from '../services/health.service';
 
 function HealthReportsPage() {
@@ -40,6 +41,32 @@ function HealthReportsPage() {
           <div className="soft-panel">
             <h3>Recommendations</h3>
             {report.recommendations.map((item) => <p key={item}>{item}</p>)}
+          </div>
+          <div className="report-grid charts-grid">
+            <div className="soft-panel chart-panel">
+              <h3>Most Common Symptoms</h3>
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={report.symptomChart}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#0c5d56" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="soft-panel chart-panel">
+              <h3>User Activity</h3>
+              <ResponsiveContainer width="100%" height={240}>
+                <LineChart data={report.activityChart}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="count" stroke="#f0c66a" strokeWidth={3} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </>
       )}

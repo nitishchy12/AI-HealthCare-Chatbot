@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { getHealthHistory, getHealthTips } from '../services/health.service';
+import { getHealthHistory, getHealthTips, getNotifications } from '../services/health.service';
 
 function DashboardPage() {
   const { user } = useAuth();
   const [history, setHistory] = useState([]);
   const [tips, setTips] = useState([]);
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     const load = async () => {
-      const [historyRes, tipsRes] = await Promise.allSettled([getHealthHistory(), getHealthTips()]);
+      const [historyRes, tipsRes, notificationsRes] = await Promise.allSettled([getHealthHistory(), getHealthTips(), getNotifications()]);
       if (historyRes.status === 'fulfilled') setHistory(historyRes.value.data.slice(0, 3));
       if (tipsRes.status === 'fulfilled') setTips(tipsRes.value.data.slice(0, 3));
+      if (notificationsRes.status === 'fulfilled') setNotifications(notificationsRes.value.data.slice(0, 3));
     };
 
     load();
@@ -75,6 +77,16 @@ function DashboardPage() {
           <article key={tip.id} className="tip-item">
             <strong>{tip.title}</strong>
             <p>{tip.description}</p>
+          </article>
+        ))}
+      </div>
+
+      <div className="card">
+        <h3>Notifications</h3>
+        {notifications.map((item) => (
+          <article key={item.message} className="notification-item">
+            <strong>{item.type}</strong>
+            <p>{item.message}</p>
           </article>
         ))}
       </div>

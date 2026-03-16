@@ -76,6 +76,13 @@ input, textarea, button {
   font: inherit;
 }
 
+select {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #c7d6e6;
+  font: inherit;
+}
+
 textarea {
   min-height: 100px;
 }
@@ -235,6 +242,47 @@ textarea {
   gap: 16px;
 }
 
+.landing-shell,
+.landing-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.landing-hero {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.landing-side-panel {
+  border-radius: 14px;
+  background: linear-gradient(180deg, #0c2d57, #114b73);
+  color: #fff;
+  padding: 18px;
+}
+
+.notification-item,
+.manage-row {
+  border-top: 1px solid #e8edf3;
+  padding: 14px 0;
+}
+
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.chart-panel {
+  min-height: 320px;
+}
+
+.charts-grid {
+  margin-top: 12px;
+}
+
 .chip-grid {
   display: flex;
   flex-wrap: wrap;
@@ -322,7 +370,8 @@ textarea {
   .two-column-page,
   .stats-grid,
   .tips-grid,
-  .report-grid {
+  .report-grid,
+  .landing-hero {
     grid-template-columns: 1fr;
   }
 
