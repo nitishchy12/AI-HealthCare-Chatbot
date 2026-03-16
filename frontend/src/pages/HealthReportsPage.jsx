@@ -49,6 +49,12 @@ function HealthReportsPage() {
       `Recent symptom checks: ${report.recentSymptomChecksCount}`
     ]);
     addSection('Recommendations', report.recommendations);
+    addSection(
+      'Weekly Health Trends',
+      report.weeklyTrend?.length
+        ? report.weeklyTrend.map((item, index) => `${index + 1}. ${item.name} (${item.value})`)
+        : ['No weekly trend data available.']
+    );
 
     doc.save(`health-report-${dateLabel}.pdf`);
   };
@@ -68,7 +74,9 @@ function HealthReportsPage() {
           <div className="report-grid">
             <div className="soft-panel">
               <h3>Recent Symptoms</h3>
-              {report.recentSymptoms.map((item) => <p key={item}>{item}</p>)}
+              <ul className="clean-list">
+                {report.recentSymptoms.map((item) => <li key={item}>{item}</li>)}
+              </ul>
             </div>
             <div className="soft-panel">
               <h3>Risk Trend</h3>
@@ -79,7 +87,17 @@ function HealthReportsPage() {
           </div>
           <div className="soft-panel">
             <h3>Recommendations</h3>
-            {report.recommendations.map((item) => <p key={item}>{item}</p>)}
+            <ul className="clean-list">
+              {report.recommendations.map((item) => <li key={item}>{item}</li>)}
+            </ul>
+          </div>
+          <div className="soft-panel">
+            <h3>Weekly Health Trends</h3>
+            <ul className="clean-list">
+              {report.weeklyTrend?.map((item, index) => (
+                <li key={item.name}>{index + 1}. {item.name} ({item.value})</li>
+              ))}
+            </ul>
           </div>
           <div className="report-grid charts-grid">
             <div className="soft-panel chart-panel">
