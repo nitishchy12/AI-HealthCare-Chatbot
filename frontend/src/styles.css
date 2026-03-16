@@ -113,6 +113,19 @@ textarea {
   overflow-wrap: anywhere;
 }
 
+.chat-block {
+  margin: 12px 0;
+}
+
+.clean-list {
+  margin: 8px 0 0 18px;
+  padding: 0;
+}
+
+.clean-list li {
+  margin-bottom: 6px;
+}
+
 .error {
   color: #be1f2d;
 }

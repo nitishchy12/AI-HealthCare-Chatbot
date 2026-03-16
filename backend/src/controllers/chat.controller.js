@@ -12,7 +12,7 @@ const chatLimiter = rateLimit({
 const createChat = async (req, res, next) => {
   try {
     const question = clean(req.body.question);
-    const aiResponse = await buildResponse(question);
+    const aiResponse = await buildResponse(question, req.user.id);
 
     const saved = await Chat.create({
       userId: req.user.id,

@@ -44,6 +44,7 @@ function ChatbotPage() {
   };
 
   const riskClass = (risk) => risk === 'High' ? 'risk-high' : risk === 'Medium' ? 'risk-medium' : 'risk-low';
+  const asList = (value) => Array.isArray(value) ? value : value ? [value] : [];
 
   return (
     <section className="page">
@@ -75,11 +76,56 @@ function ChatbotPage() {
         {!historyLoading && chats.map((item) => (
           <article key={item._id} className="chat-item">
             <p><strong>Question:</strong> {item.question}</p>
-            <p><strong>Symptoms:</strong> {item.aiResponse?.symptoms}</p>
-            <p><strong>Possible Causes:</strong> {item.aiResponse?.possibleCauses}</p>
-            <p><strong>Prevention:</strong> {item.aiResponse?.prevention}</p>
-            <p><strong>When to consult doctor:</strong> {item.aiResponse?.whenToConsultDoctor}</p>
+
+            <div className="chat-block">
+              <strong>Symptoms</strong>
+              <ul className="clean-list">
+                {asList(item.aiResponse?.symptoms).map((entry) => <li key={entry}>{entry}</li>)}
+              </ul>
+            </div>
+
+            <div className="chat-block">
+              <strong>Possible Causes</strong>
+              <ul className="clean-list">
+                {asList(item.aiResponse?.possibleCauses).map((entry) => <li key={entry}>{entry}</li>)}
+              </ul>
+            </div>
+
+            <div className="chat-block">
+              <strong>Prevention</strong>
+              <ul className="clean-list">
+                {asList(item.aiResponse?.prevention).map((entry) => <li key={entry}>{entry}</li>)}
+              </ul>
+            </div>
+
+            <div className="chat-block">
+              <strong>When to Consult Doctor</strong>
+              <ul className="clean-list">
+                {asList(item.aiResponse?.whenToConsultDoctor).map((entry) => <li key={entry}>{entry}</li>)}
+              </ul>
+            </div>
+
             <p className={riskClass(item.riskLevel)}><strong>Risk:</strong> {item.riskLevel}</p>
+
+            {item.aiResponse?.emergencyAlert && (
+              <div className="emergency-banner">
+                {item.aiResponse.emergencyAlert}
+              </div>
+            )}
+
+            {Array.isArray(item.aiResponse?.recommendedHospitals) && item.aiResponse.recommendedHospitals.length > 0 && (
+              <div className="chat-block">
+                <strong>Recommended Hospitals</strong>
+                <ul className="clean-list">
+                  {item.aiResponse.recommendedHospitals.map((hospital) => (
+                    <li key={`${hospital.name}-${hospital.city}`}>
+                      {hospital.name} ({hospital.city}) - {hospital.specialization} - Rating {hospital.rating}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <p className="disclaimer">{item.aiResponse?.disclaimer}</p>
           </article>
         ))}
