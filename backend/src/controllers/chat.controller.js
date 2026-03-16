@@ -60,4 +60,17 @@ const getMyChats = async (req, res, next) => {
   }
 };
 
-module.exports = { createChat, getMyChats, chatLimiter };
+const clearMyChats = async (req, res, next) => {
+  try {
+    await Chat.deleteMany({ userId: req.user.id });
+    return res.status(200).json({
+      success: true,
+      message: 'Chat history cleared',
+      data: { cleared: true }
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+module.exports = { createChat, getMyChats, clearMyChats, chatLimiter };

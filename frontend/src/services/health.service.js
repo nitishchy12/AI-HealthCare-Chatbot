@@ -4,6 +4,7 @@ export const registerUser = async (payload) => (await api.post('/auth/register',
 export const loginUser = async (payload) => (await api.post('/auth/login', payload)).data;
 export const sendChat = async (payload) => (await api.post('/chat', payload)).data;
 export const getChatHistory = async (page = 1, limit = 10) => (await api.get(`/chat/history?page=${page}&limit=${limit}`)).data;
+export const clearChatHistory = async () => (await api.delete('/chat/history')).data;
 export const getHospitalsByCity = async (city, specialization = '') =>
   (await api.get(`/hospitals?city=${encodeURIComponent(city)}&specialization=${encodeURIComponent(specialization)}`)).data;
 export const addHospital = async (payload) => (await api.post('/hospitals', payload)).data;

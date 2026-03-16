@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getChatHistory, sendChat } from '../services/health.service';
+import { clearChatHistory, getChatHistory, sendChat } from '../services/health.service';
 
 function ChatbotPage() {
   const [question, setQuestion] = useState('');
@@ -43,13 +43,34 @@ function ChatbotPage() {
     }
   };
 
+  const onNewAssessment = async () => {
+    setError('');
+    await clearChatHistory();
+    setChats([]);
+    setPagination({ page: 1, totalPages: 1, total: 0, limit: 10 });
+    setPage(1);
+    setQuestion('');
+  };
+
   const riskClass = (risk) => risk === 'High' ? 'risk-high' : risk === 'Medium' ? 'risk-medium' : 'risk-low';
   const asList = (value) => Array.isArray(value) ? value : value ? [value] : [];
+  const latestChat = chats[0];
+  const summaryAction = latestChat?.riskLevel === 'High'
+    ? 'Seek urgent medical help and use the recommended hospitals below.'
+    : latestChat?.riskLevel === 'Medium'
+      ? 'Monitor symptoms closely and book a doctor consultation if they continue.'
+      : 'Rest, hydration, and observation are recommended for now.';
 
   return (
     <section className="page">
       <div className="card">
-        <h2>Health Chatbot</h2>
+        <div className="section-head">
+          <div>
+            <h2>Health Chatbot</h2>
+            <p className="muted-text">Start a fresh health check whenever you want a clean assessment trail.</p>
+          </div>
+          <button className="btn secondary-btn" type="button" onClick={onNewAssessment}>Start New Health Assessment</button>
+        </div>
         <form onSubmit={onSubmit} className="form">
           <textarea
             value={question}
@@ -62,6 +83,28 @@ function ChatbotPage() {
         </form>
         {error && <p className="error">{error}</p>}
       </div>
+
+      {latestChat && (
+        <div className="card summary-card">
+          <p className="eyebrow">Health Assessment Summary</p>
+          <div className="summary-grid">
+            <div>
+              <strong>Symptoms detected</strong>
+              <ul className="clean-list">
+                {asList(latestChat.aiResponse?.symptoms).map((entry) => <li key={entry}>{entry}</li>)}
+              </ul>
+            </div>
+            <div>
+              <strong>Risk Level</strong>
+              <p><span className={`risk-badge ${latestChat.riskLevel?.toLowerCase()}`}>{latestChat.riskLevel}</span></p>
+              <strong>Recommended Action</strong>
+              <p>{summaryAction}</p>
+              <strong>Next Steps</strong>
+              <p>Monitor symptoms for 2 to 3 days, or act sooner if warning signs appear.</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="card">
         <h3>Chat History</h3>
@@ -105,7 +148,7 @@ function ChatbotPage() {
               </ul>
             </div>
 
-            <p className={riskClass(item.riskLevel)}><strong>Risk:</strong> {item.riskLevel}</p>
+            <p><strong>Risk:</strong> <span className={`risk-badge ${item.riskLevel?.toLowerCase()}`}>{item.riskLevel}</span></p>
 
             {item.aiResponse?.emergencyAlert && (
               <div className="emergency-banner">

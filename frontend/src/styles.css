@@ -134,6 +134,10 @@ textarea {
   color: #137333;
 }
 
+.muted-text {
+  color: #5d6877;
+}
+
 .risk-low {
   color: #1f7a1f;
 }
@@ -232,6 +236,30 @@ textarea {
   background: #ffd8d8;
 }
 
+.risk-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.risk-badge.low {
+  color: #0f7a2a;
+  background: #daf1df;
+}
+
+.risk-badge.medium {
+  color: #b56f00;
+  background: #fde8bf;
+}
+
+.risk-badge.high {
+  color: #be1f2d;
+  background: #ffd8d8;
+}
+
 .tip-item,
 .tip-card,
 .soft-panel {
@@ -239,6 +267,16 @@ textarea {
   background: #f8fbff;
   padding: 14px;
   margin-top: 12px;
+}
+
+.summary-card {
+  background: linear-gradient(180deg, rgba(240, 198, 106, 0.14), rgba(255, 255, 255, 0.95));
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
 }
 
 .tips-grid,
@@ -384,7 +422,8 @@ textarea {
   .stats-grid,
   .tips-grid,
   .report-grid,
-  .landing-hero {
+  .landing-hero,
+  .summary-grid {
     grid-template-columns: 1fr;
   }
 
