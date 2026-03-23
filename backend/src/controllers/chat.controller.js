@@ -2,6 +2,7 @@ const rateLimit = require('express-rate-limit');
 const Chat = require('../models/Chat');
 const { buildResponse } = require('../services/ai.service');
 const { clean } = require('../utils/sanitize');
+const { logAuditAction } = require('../utils/audit');
 
 const chatLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -12,13 +13,31 @@ const chatLimiter = rateLimit({
 const createChat = async (req, res, next) => {
   try {
     const question = clean(req.body.question);
-    const aiResponse = await buildResponse(question, req.user.id);
+    const language = req.body.language || 'en';
+    const aiResponse = await buildResponse(question, req.user.id, language);
 
     const saved = await Chat.create({
       userId: req.user.id,
+      language,
       question,
       aiResponse,
       riskLevel: aiResponse.riskLevel
+    });
+
+    const io = req.app.get('io');
+    io?.to(`user:${req.user.id}`).emit('assessment:created', {
+      id: saved._id.toString(),
+      riskLevel: saved.riskLevel,
+      createdAt: saved.createdAt
+    });
+
+    await logAuditAction({
+      userId: req.user.id,
+      role: req.user.role,
+      action: 'CREATE',
+      entityType: 'chat_assessment',
+      entityId: saved._id.toString(),
+      details: { riskLevel: saved.riskLevel, language }
     });
 
     return res.status(201).json({
@@ -63,6 +82,14 @@ const getMyChats = async (req, res, next) => {
 const clearMyChats = async (req, res, next) => {
   try {
     await Chat.deleteMany({ userId: req.user.id });
+    await logAuditAction({
+      userId: req.user.id,
+      role: req.user.role,
+      action: 'DELETE',
+      entityType: 'chat_history',
+      entityId: req.user.id,
+      details: { cleared: true }
+    });
     return res.status(200).json({
       success: true,
       message: 'Chat history cleared',

@@ -1,5 +1,6 @@
 const { pool } = require('../config/db');
 const { clean } = require('../utils/sanitize');
+const { logAuditAction } = require('../utils/audit');
 
 const listTips = async (_req, res, next) => {
   try {
@@ -22,6 +23,15 @@ const addTip = async (req, res, next) => {
       'INSERT INTO health_tips (title, description, category) VALUES ($1, $2, $3) RETURNING *',
       [payload.title, payload.description, payload.category]
     );
+
+    await logAuditAction({
+      userId: req.user.id,
+      role: req.user.role,
+      action: 'CREATE',
+      entityType: 'health_tip',
+      entityId: result.rows[0].id,
+      details: { title: result.rows[0].title }
+    });
 
     return res.status(201).json({ success: true, message: 'Health tip added', data: result.rows[0] });
   } catch (error) {
@@ -49,6 +59,15 @@ const updateTip = async (req, res, next) => {
       return next({ statusCode: 404, message: 'Health tip not found' });
     }
 
+    await logAuditAction({
+      userId: req.user.id,
+      role: req.user.role,
+      action: 'UPDATE',
+      entityType: 'health_tip',
+      entityId: result.rows[0].id,
+      details: { title: result.rows[0].title }
+    });
+
     return res.status(200).json({ success: true, message: 'Health tip updated', data: result.rows[0] });
   } catch (error) {
     return next(error);
@@ -61,6 +80,14 @@ const deleteTip = async (req, res, next) => {
     if (result.rowCount === 0) {
       return next({ statusCode: 404, message: 'Health tip not found' });
     }
+
+    await logAuditAction({
+      userId: req.user.id,
+      role: req.user.role,
+      action: 'DELETE',
+      entityType: 'health_tip',
+      entityId: req.params.id
+    });
 
     return res.status(200).json({ success: true, message: 'Health tip deleted', data: { id: req.params.id } });
   } catch (error) {

@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const swaggerUi = require('swagger-ui-express');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth.routes');
@@ -18,6 +19,7 @@ const notificationRoutes = require('./routes/notification.routes');
 const errorHandler = require('./middlewares/errorHandler');
 const requestContext = require('./middlewares/requestContext');
 const { getDbHealth } = require('./config/db');
+const swaggerSpec = require('./config/swagger');
 const { logger } = require('./utils/logger');
 
 const app = express();
@@ -50,6 +52,7 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/auth', authRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/symptoms', symptomRoutes);

@@ -1,15 +1,22 @@
+const http = require('http');
 const app = require('./src/app');
 const { connectMongo, connectPostgres, closeConnections } = require('./src/config/db');
+const { initSocket } = require('./src/config/socket');
 const { logger } = require('./src/utils/logger');
 
 const PORT = process.env.PORT || 5000;
 let server;
+let io;
 
 const gracefulShutdown = async (signal) => {
   logger.info('Server shutting down', { signal });
 
   if (server) {
     await new Promise((resolve) => server.close(resolve));
+  }
+
+  if (io) {
+    io.close();
   }
 
   await closeConnections();
@@ -21,7 +28,11 @@ const gracefulShutdown = async (signal) => {
     await connectPostgres();
     await connectMongo();
 
-    server = app.listen(PORT, () => {
+    server = http.createServer(app);
+    io = initSocket(server);
+    app.set('io', io);
+
+    server.listen(PORT, () => {
       logger.info(`Backend running on port ${PORT}`);
     });
   } catch (error) {

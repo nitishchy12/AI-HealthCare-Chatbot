@@ -1,0 +1,56 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: health-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: public_health
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  mongodb:
+    image: mongo:7
+    container_name: health-mongo
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+
+  backend:
+    build:
+      context: ./backend
+    container_name: health-backend
+    depends_on:
+      - postgres
+      - mongodb
+    environment:
+      PORT: 5000
+      NODE_ENV: production
+      JWT_SECRET: change_me_strong_secret
+      JWT_EXPIRES_IN: 1d
+      POSTGRES_URI: postgresql://postgres:postgres@postgres:5432/public_health
+      MONGO_URI: mongodb://mongodb:27017/public_health_chatbot
+      AI_PROVIDER: openai
+      AI_API_KEY: replace_with_api_key
+      AI_MODEL: gpt-4o-mini
+      FRONTEND_URL: http://localhost:5173
+    ports:
+      - '5000:5000'
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: health-frontend
+    depends_on:
+      - backend
+    ports:
+      - '5173:80'
+
+volumes:
+  postgres_data:
+  mongo_data:

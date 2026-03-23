@@ -1,6 +1,6 @@
 # AI-Driven Public Health Chatbot for Disease Awareness
 
-A full-stack healthcare project designed with practical production-style engineering.
+A full-stack healthcare project built with a practical implementation focus. The goal is to help users ask symptom-related questions, understand possible risk, review their own health activity, and find hospitals without pretending to be a diagnostic system.
 
 ## Tech Stack
 
@@ -14,27 +14,17 @@ A full-stack healthcare project designed with practical production-style enginee
 
 ## Architecture Diagram
 
-```text
-[React Frontend]
-    |
-    v
-[Express API Layer]
-    |- Auth Controller (JWT + bcrypt)
-    |- Chat Controller (AI + fallback + pagination)
-    |- Hospital Controller
-    |- Disease Controller (admin managed)
-    |
-    v
-[Service Layer]
-    |- AI Service (LLM API call + fallback logic)
-    |
-    +----> [PostgreSQL]
-    |        |- users
-    |        |- hospitals
-    |        |- diseases
-    |
-    +----> [MongoDB]
-             |- chats
+See [docs/architecture.md](docs/architecture.md) for the Mermaid architecture and sequence diagrams.
+
+```mermaid
+flowchart LR
+  A[React Frontend] --> B[Express API]
+  B --> C[Auth / Chat / Reports / Admin]
+  C --> D[AI Service]
+  C --> E[(PostgreSQL)]
+  C --> F[(MongoDB)]
+  B --> G[Socket.IO]
+  D --> H[LLM API]
 ```
 
 ## Folder Structure
@@ -58,18 +48,25 @@ ai-public-health-chatbot/
 - Health history timeline per user
 - AI-generated health report with printable PDF export
 - Health report charts for symptom frequency, activity, and risk trend
+- Weekly health trend analytics based on recent user assessments
 - Daily health tips page
 - User profile page with age, gender, city, and medical notes
 - Notifications panel with follow-up and awareness alerts
 - Chat history pagination (`page`, `limit`)
+- Hindi / English language toggle for the main user journey
+- Real-time assessment sync using Socket.IO
 - Admin panel:
   - Add, edit, and delete hospitals
   - Add, edit, and delete verified disease info
-  - Add health tips
+- Add, edit, and delete health tips
 - Input validation and centralized error handling
 - AI fallback handling using verified disease data
 - Request ID tracking in logs and error responses
 - Health check endpoint for ops readiness
+- Swagger documentation at `/api/docs`
+- Audit logging for admin CRUD actions and chat history clearing
+- Confidence score and prompt version metadata in chat responses
+- Jest + Supertest API tests for key auth and chat flows
 
 ## Main Pages
 
@@ -102,9 +99,10 @@ Example response:
 1. User logs in and gets JWT token.
 2. User asks health question from chatbot page.
 3. Backend validates and sanitizes input.
-4. AI service returns structured response.
+4. AI service returns structured response with confidence score and prompt version.
 5. Response is stored in MongoDB and sent to frontend.
-6. If AI fails, backend uses disease-name matching from PostgreSQL and returns fallback advisory.
+6. A Socket.IO event is emitted so the UI can refresh live.
+7. If AI fails or returns unsafe structure, backend uses disease-name matching from PostgreSQL and returns fallback advisory.
 
 ## API Response Format
 
@@ -138,6 +136,7 @@ Error format:
 - `POST /api/symptoms` (protected)
 - `GET /api/history` (protected)
 - `GET /api/reports` (protected)
+- `GET /api/docs`
 - `GET /api/profile` (protected)
 - `PUT /api/profile` (protected)
 - `GET /api/notifications` (protected)
@@ -151,6 +150,8 @@ Error format:
 - `DELETE /api/diseases/:id` (admin only)
 - `GET /api/tips`
 - `POST /api/tips` (admin only)
+- `PUT /api/tips/:id` (admin only)
+- `DELETE /api/tips/:id` (admin only)
 - `GET /api/health`
 
 ## Database Schema Explanation
@@ -163,7 +164,7 @@ Error format:
 
 ### MongoDB (flexible chat records)
 
-- `chats`: each user query + structured AI output + risk level + timestamps
+- `chats`: each user query + structured AI output + risk level + confidence score + prompt version + timestamps
 
 ### Why PostgreSQL + MongoDB?
 
@@ -175,7 +176,9 @@ Error format:
 
 - AI integration is API-based (no custom model training).
 - Prompt asks for strict JSON output with fixed keys.
-- Response parser validates and normalizes risk level.
+- Prompt version is stored as metadata so response behavior is easier to explain and evolve.
+- Response parser validates structure, normalizes risk level, and rejects clearly unsafe or messy output.
+- Confidence score is estimated from symptom knowledge matches and disease table matches.
 - If AI fails:
   - query is matched against `diseases.disease_name` using case-insensitive containment logic
   - if matched, return verified disease details
@@ -194,6 +197,8 @@ Risk classification is based on rule-based symptom severity mapping combined wit
 - Password hashing with bcrypt
 - JWT authentication middleware
 - Role-based middleware for admin routes
+- Role checks are logged with request IDs
+- Audit trail stored in `audit_logs` for admin CRUD operations
 - Input validation using Joi
 - Input sanitization using sanitize-html
 - Rate limiting for chat endpoint
@@ -201,18 +206,50 @@ Risk classification is based on rule-based symptom severity mapping combined wit
 - Centralized error handling with request ID
 - Structured logging
 
+## Healthcare Safety Notes
+
+- This project is for awareness and triage support only. It is not a medical diagnosis system.
+- Every AI response includes a disclaimer.
+- Logs avoid storing raw passwords and focus on operational metadata like request IDs, route usage, and admin actions.
+- Encryption at rest is not implemented in local development. For deployment, database volume encryption or managed database encryption should be enabled.
+- Sensitive personal data should be kept minimal, and production deployment should add stronger access controls and secrets management.
+
 ## Operational Readiness
 
 - Startup fails fast if PostgreSQL or MongoDB connection fails
 - Graceful shutdown on `SIGINT` / `SIGTERM`
 - DB connections are closed before exit
 - Health check available for Docker/CI monitoring
+- API docs available through Swagger UI
+- Dockerfiles provided for frontend and backend
+- `docker-compose.yml` provided for local full-stack startup
+
+## Real-Time Updates
+
+- Socket.IO is used to emit `assessment:created` events after a chat assessment is saved.
+- The chat page listens for these events and refreshes the history automatically.
+
+## Testing
+
+Current automated test coverage includes:
+
+- `backend/tests/auth.test.js`
+- `backend/tests/chat.test.js`
+
+These tests cover:
+
+- successful registration
+- invalid login handling
+- protected chat creation
+- clearing chat history
 
 ## Trade-offs
 
 - LLM API is used instead of self-trained NLP model to keep project scope practical and implementation-focused.
 - Rule-based risk mapping is simple and explainable but not a clinical diagnostic model.
 - Dual database setup adds slight complexity but improves data-model fit.
+- Hindi support is implemented for the main user journey and structured health responses, but not every page has full translation coverage yet.
+- Real-time updates improve user feedback, but the app still uses standard request-response for the actual chat submission.
 
 ## Local Setup
 
@@ -228,6 +265,12 @@ npm run dev
 
 If local PostgreSQL is already using port `5432`, run the Docker PostgreSQL container on `5433` and keep `POSTGRES_URI` aligned with `backend/.env.example`.
 
+Run backend tests:
+
+```bash
+npm test
+```
+
 ### 2) Frontend setup
 
 ```bash
@@ -236,6 +279,22 @@ npm install
 copy .env.example .env
 npm run dev
 ```
+
+## Docker Setup
+
+Run the full stack with Docker:
+
+```bash
+docker compose up --build
+```
+
+Services:
+
+- Frontend: `http://localhost:5173`
+- Backend: `http://localhost:5000`
+- Swagger docs: `http://localhost:5000/api/docs`
+- PostgreSQL: `localhost:5433`
+- MongoDB: `localhost:27017`
 
 ## Environment Variables
 
@@ -258,7 +317,7 @@ npm run dev
 
 ## Default Notes for Demo
 
-- Seed script inserts 20 hospitals and 10 disease records.
+- Seed script inserts 30 hospitals, 15 diseases, and 20 health tips.
 - Seed script is idempotent and avoids duplicates.
 - Register a user normally.
 - Admin role can be assigned directly in PostgreSQL `users` table (`role = 'admin'`) for demo.
@@ -271,9 +330,9 @@ Every AI response includes:
 
 ## Future Scope
 
-- Multilingual support
 - Geolocation-based nearest hospital suggestions
 - Better risk scoring using medical protocol data
-- Automated test coverage and CI checks
+- Wider automated test coverage and CI checks
 - Optional doctor escalation workflow for high-risk cases
+
 

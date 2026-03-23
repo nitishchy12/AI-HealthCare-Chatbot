@@ -1,5 +1,6 @@
 const { pool } = require('../config/db');
 const { clean } = require('../utils/sanitize');
+const { logAuditAction } = require('../utils/audit');
 
 const getByCity = async (req, res, next) => {
   try {
@@ -38,6 +39,15 @@ const addHospital = async (req, res, next) => {
       [payload.name, payload.city, payload.address, payload.phone, payload.latitude, payload.longitude, payload.rating, payload.specialization]
     );
 
+    await logAuditAction({
+      userId: req.user.id,
+      role: req.user.role,
+      action: 'CREATE',
+      entityType: 'hospital',
+      entityId: result.rows[0].id,
+      details: { name: result.rows[0].name, city: result.rows[0].city }
+    });
+
     return res.status(201).json({ success: true, message: 'Hospital added successfully', data: result.rows[0] });
   } catch (error) {
     return next(error);
@@ -66,6 +76,14 @@ const updateHospital = async (req, res, next) => {
     );
 
     if (result.rowCount === 0) return next({ statusCode: 404, message: 'Hospital not found' });
+    await logAuditAction({
+      userId: req.user.id,
+      role: req.user.role,
+      action: 'UPDATE',
+      entityType: 'hospital',
+      entityId: result.rows[0].id,
+      details: { name: result.rows[0].name, city: result.rows[0].city }
+    });
     return res.status(200).json({ success: true, message: 'Hospital updated', data: result.rows[0] });
   } catch (error) {
     return next(error);
@@ -76,6 +94,13 @@ const deleteHospital = async (req, res, next) => {
   try {
     const result = await pool.query('DELETE FROM hospitals WHERE id = $1 RETURNING id', [req.params.id]);
     if (result.rowCount === 0) return next({ statusCode: 404, message: 'Hospital not found' });
+    await logAuditAction({
+      userId: req.user.id,
+      role: req.user.role,
+      action: 'DELETE',
+      entityType: 'hospital',
+      entityId: req.params.id
+    });
     return res.status(200).json({ success: true, message: 'Hospital deleted', data: { id: req.params.id } });
   } catch (error) {
     return next(error);

@@ -50,6 +50,17 @@ CREATE TABLE IF NOT EXISTS health_tips (
   category VARCHAR(80) NOT NULL DEFAULT 'General Wellness',
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER,
+  user_role VARCHAR(20),
+  action VARCHAR(120) NOT NULL,
+  entity_type VARCHAR(80) NOT NULL,
+  entity_id VARCHAR(80),
+  details TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
 `;
 
 const ensureConstraints = async () => {

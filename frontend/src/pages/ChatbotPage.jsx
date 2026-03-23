@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react';
 import { clearChatHistory, getChatHistory, sendChat } from '../services/health.service';
+import { connectSocket, disconnectSocket } from '../services/socket';
+import { useAuth } from '../hooks/useAuth';
+import { useLanguage } from '../hooks/useLanguage';
 
 function ChatbotPage() {
+  const { token } = useAuth();
+  const { language, t } = useLanguage();
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(true);
@@ -28,12 +33,31 @@ function ChatbotPage() {
     loadHistory(1);
   }, []);
 
+  useEffect(() => {
+    if (!token) return undefined;
+
+    const socket = connectSocket(token);
+    if (!socket) return undefined;
+
+    const handleAssessment = () => {
+      window.dispatchEvent(new CustomEvent('app:error', { detail: { message: t.liveUpdate } }));
+      loadHistory(1);
+    };
+
+    socket.on('assessment:created', handleAssessment);
+
+    return () => {
+      socket.off('assessment:created', handleAssessment);
+      disconnectSocket();
+    };
+  }, [token, t.liveUpdate]);
+
   const onSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      await sendChat({ question });
+      await sendChat({ question, language });
       setQuestion('');
       await loadHistory(1);
     } catch (err) {
@@ -52,62 +76,61 @@ function ChatbotPage() {
     setQuestion('');
   };
 
-  const riskClass = (risk) => risk === 'High' ? 'risk-high' : risk === 'Medium' ? 'risk-medium' : 'risk-low';
-  const asList = (value) => Array.isArray(value) ? value : value ? [value] : [];
+  const asList = (value) => (Array.isArray(value) ? value : value ? [value] : []);
   const latestChat = chats[0];
   const summaryAction = latestChat?.riskLevel === 'High'
-    ? 'Seek urgent medical help and use the recommended hospitals below.'
+    ? t.highAction
     : latestChat?.riskLevel === 'Medium'
-      ? 'Monitor symptoms closely and book a doctor consultation if they continue.'
-      : 'Rest, hydration, and observation are recommended for now.';
+      ? t.mediumAction
+      : t.lowAction;
 
   return (
     <section className="page">
       <div className="card">
         <div className="section-head">
           <div>
-            <h2>Health Chatbot</h2>
-            <p className="muted-text">Start a fresh health check whenever you want a clean assessment trail.</p>
+            <h2>{t.chatbotTitle}</h2>
+            <p className="muted-text">{t.chatbotSubtext}</p>
           </div>
-          <button className="btn secondary-btn" type="button" onClick={onNewAssessment}>Start New Health Assessment</button>
+          <button className="btn secondary-btn" type="button" onClick={onNewAssessment}>{t.newAssessment}</button>
         </div>
         <form onSubmit={onSubmit} className="form">
           <textarea
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Ask symptoms or health awareness question"
+            placeholder={t.askPlaceholder}
             required
             minLength={5}
           />
-          <button className="btn" disabled={loading} type="submit">{loading ? 'Generating...' : 'Ask AI'}</button>
+          <button className="btn" disabled={loading} type="submit">{loading ? t.generating : t.askAi}</button>
         </form>
         {error && <p className="error">{error}</p>}
       </div>
 
       {latestChat && (
         <div className="card summary-card">
-          <p className="eyebrow">Health Assessment Summary</p>
+          <p className="eyebrow">{t.summary}</p>
           <div className="summary-grid">
             <div>
-              <strong>Symptoms detected</strong>
+              <strong>{t.symptomsDetected}</strong>
               <ul className="clean-list">
                 {asList(latestChat.aiResponse?.symptoms).map((entry) => <li key={entry}>{entry}</li>)}
               </ul>
             </div>
             <div>
-              <strong>Risk Level</strong>
+              <strong>{t.riskLevel}</strong>
               <p><span className={`risk-badge ${latestChat.riskLevel?.toLowerCase()}`}>{latestChat.riskLevel}</span></p>
-              <strong>Recommended Action</strong>
+              <strong>{t.recommendedAction}</strong>
               <p>{summaryAction}</p>
-              <strong>Next Steps</strong>
-              <p>Monitor symptoms for 2 to 3 days, or act sooner if warning signs appear.</p>
+              <strong>{t.nextSteps}</strong>
+              <p>{t.nextStepsBody}</p>
             </div>
           </div>
         </div>
       )}
 
       <div className="card">
-        <h3>Chat History</h3>
+        <h3>{t.chatHistory}</h3>
         {historyLoading && (
           <div>
             <div className="skeleton-card" />
@@ -115,7 +138,7 @@ function ChatbotPage() {
             <div className="skeleton-card" />
           </div>
         )}
-        {!historyLoading && chats.length === 0 && <p>No chats yet.</p>}
+        {!historyLoading && chats.length === 0 && <p>{t.noChats}</p>}
         {!historyLoading && chats.map((item) => (
           <article key={item._id} className="chat-item">
             <p><strong>Question:</strong> {item.question}</p>
@@ -128,27 +151,29 @@ function ChatbotPage() {
             </div>
 
             <div className="chat-block">
-              <strong>Possible Causes</strong>
+              <strong>{t.possibleCauses}</strong>
               <ul className="clean-list">
                 {asList(item.aiResponse?.possibleCauses).map((entry) => <li key={entry}>{entry}</li>)}
               </ul>
             </div>
 
             <div className="chat-block">
-              <strong>Prevention</strong>
+              <strong>{t.prevention}</strong>
               <ul className="clean-list">
                 {asList(item.aiResponse?.prevention).map((entry) => <li key={entry}>{entry}</li>)}
               </ul>
             </div>
 
             <div className="chat-block">
-              <strong>When to Consult Doctor</strong>
+              <strong>{t.consultDoctor}</strong>
               <ul className="clean-list">
                 {asList(item.aiResponse?.whenToConsultDoctor).map((entry) => <li key={entry}>{entry}</li>)}
               </ul>
             </div>
 
             <p><strong>Risk:</strong> <span className={`risk-badge ${item.riskLevel?.toLowerCase()}`}>{item.riskLevel}</span></p>
+            <p className="meta-line"><strong>{t.confidence}:</strong> {Math.round((item.aiResponse?.confidenceScore || 0) * 100)}%</p>
+            <p className="meta-line"><strong>{t.promptVersion}:</strong> {item.aiResponse?.promptVersion || 'rule-v2'}</p>
 
             {item.aiResponse?.emergencyAlert && (
               <div className="emergency-banner">
@@ -158,7 +183,7 @@ function ChatbotPage() {
 
             {Array.isArray(item.aiResponse?.recommendedHospitals) && item.aiResponse.recommendedHospitals.length > 0 && (
               <div className="chat-block">
-                <strong>Recommended Hospitals</strong>
+                <strong>{t.recommendedHospitals}</strong>
                 <ul className="clean-list">
                   {item.aiResponse.recommendedHospitals.map((hospital) => (
                     <li key={`${hospital.name}-${hospital.city}`}>

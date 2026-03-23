@@ -1,6 +1,9 @@
 const { pool } = require('../config/db');
 const { logger } = require('../utils/logger');
 
+const PROMPT_VERSION = 'health-awareness-v3';
+const SUPPORTED_LANGUAGES = ['en', 'hi'];
+
 const symptomKnowledge = [
   {
     patterns: ['fever', 'temperature', 'chills'],
@@ -53,6 +56,61 @@ const symptomKnowledge = [
   }
 ];
 
+const phraseTranslations = {
+  'general discomfort': 'सामान्य असुविधा',
+  'monitor symptoms': 'लक्षणों पर नजर रखें',
+  'infection': 'संक्रमण',
+  'allergy': 'एलर्जी',
+  'dehydration': 'डिहाइड्रेशन',
+  'mild inflammation': 'हल्की सूजन',
+  'stay hydrated': 'पर्याप्त पानी पिएं',
+  'get rest': 'आराम करें',
+  'maintain hygiene': 'स्वच्छता बनाए रखें',
+  'avoid self-medication without guidance': 'बिना सलाह के दवा न लें',
+  'consult a doctor if symptoms persist': 'अगर लक्षण बने रहें तो डॉक्टर से मिलें',
+  'seek help earlier if symptoms worsen quickly': 'अगर लक्षण जल्दी बढ़ें तो तुरंत मदद लें',
+  'high risk detected. seek medical help immediately.': 'उच्च जोखिम पाया गया है। तुरंत चिकित्सा सहायता लें।',
+  'this information is for awareness only and not a substitute for professional medical advice.': 'यह जानकारी केवल जागरूकता के लिए है और पेशेवर चिकित्सा सलाह का विकल्प नहीं है।',
+  'ai service was unavailable, so verified fallback information is shown.': 'एआई सेवा उपलब्ध नहीं थी, इसलिए सत्यापित बैकअप जानकारी दिखाई गई है।',
+  'confidence': 'विश्वास',
+  'viral infection': 'वायरल संक्रमण',
+  'dengue': 'डेंगू',
+  'malaria': 'मलेरिया',
+  'flu': 'फ्लू',
+  'drink plenty of water': 'पर्याप्त पानी पिएं',
+  'monitor body temperature': 'शरीर का तापमान देखें',
+  'take rest': 'आराम करें',
+  'avoid exposure to mosquitoes': 'मच्छरों से बचें',
+  'common cold': 'सामान्य सर्दी',
+  'throat irritation': 'गले में जलन',
+  'seasonal allergy': 'मौसमी एलर्जी',
+  'mild respiratory infection': 'हल्का श्वसन संक्रमण',
+  'drink warm fluids': 'गर्म तरल लें',
+  'avoid cold drinks': 'ठंडे पेय से बचें',
+  'steam inhalation': 'भाप लें',
+  'rest your throat': 'गले को आराम दें',
+  'chest pain': 'सीने में दर्द',
+  'pressure in chest': 'सीने में दबाव',
+  'tightness': 'जकड़न',
+  'discomfort': 'असुविधा',
+  'heart-related condition': 'हृदय से जुड़ी समस्या',
+  'muscle strain': 'मांसपेशियों में खिंचाव',
+  'acid reflux': 'एसिड रिफ्लक्स',
+  'avoid physical strain': 'शारीरिक जोर से बचें',
+  'do not ignore persistent pain': 'लगातार दर्द को नजरअंदाज न करें',
+  'seek urgent evaluation if pain is severe': 'दर्द तेज हो तो तुरंत जांच कराएं',
+  'breathing difficulty': 'सांस लेने में कठिनाई',
+  'shortness of breath': 'सांस फूलना',
+  'wheezing': 'घरघराहट',
+  'chest discomfort': 'सीने में असुविधा',
+  'asthma flare': 'अस्थमा का बढ़ना',
+  'respiratory infection': 'श्वसन संक्रमण',
+  'cardiopulmonary emergency': 'हृदय या फेफड़ों की आपात स्थिति',
+  'avoid smoke and dust exposure': 'धुआं और धूल से बचें',
+  'rest in an upright position': 'सीधे बैठकर आराम करें',
+  'use prescribed inhaler if available': 'अगर डॉक्टर ने इनहेलर दिया है तो उपयोग करें'
+};
+
 const buildGeneralFallback = () => ({
   symptoms: ['general discomfort', 'monitor symptoms'],
   possibleCauses: ['infection', 'allergy', 'dehydration', 'mild inflammation'],
@@ -91,10 +149,7 @@ const extractKnowledgeMatches = (question) => {
 
 const fetchDiseaseMatches = async (question, knowledgeMatches) => {
   const normalized = question.toLowerCase();
-  const keywords = dedupeNormalized([
-    normalized,
-    ...knowledgeMatches.flatMap((item) => item.patterns)
-  ], 8);
+  const keywords = dedupeNormalized([normalized, ...knowledgeMatches.flatMap((item) => item.patterns)], 8);
 
   if (keywords.length === 0) return [];
 
@@ -150,17 +205,75 @@ const getRecommendedHospitals = async (userId, riskLevel, question) => {
   return result.rows;
 };
 
-const buildRuleBasedResponse = async (question, userId) => {
+const estimateConfidenceScore = (knowledgeMatches, diseaseMatches, riskLevel) => {
+  let score = 0.55;
+  score += Math.min(knowledgeMatches.length * 0.08, 0.16);
+  score += Math.min(diseaseMatches.length * 0.06, 0.18);
+  if (riskLevel === 'High') score += 0.04;
+  return Number(Math.min(score, 0.95).toFixed(2));
+};
+
+const translateText = (value, language) => {
+  if (language !== 'hi') return value;
+
+  const normalized = String(value || '').trim();
+  if (!normalized) return normalized;
+
+  const exact = phraseTranslations[normalized.toLowerCase()];
+  if (exact) return exact;
+
+  return normalized
+    .split(', ')
+    .map((part) => phraseTranslations[part.toLowerCase()] || part)
+    .join(', ');
+};
+
+const translateArray = (items, language) => items.map((item) => translateText(item, language));
+
+const translateHospitals = (hospitals, language) => {
+  if (language !== 'hi') return hospitals;
+
+  return hospitals.map((hospital) => ({
+    ...hospital,
+    specialization: translateText(hospital.specialization, language)
+  }));
+};
+
+const addLanguage = (payload, language) => ({
+  ...payload,
+  symptoms: translateArray(payload.symptoms, language),
+  possibleCauses: translateArray(payload.possibleCauses, language),
+  prevention: translateArray(payload.prevention, language),
+  whenToConsultDoctor: translateArray(payload.whenToConsultDoctor, language),
+  emergencyAlert: translateText(payload.emergencyAlert, language),
+  recommendedHospitals: translateHospitals(payload.recommendedHospitals || [], language)
+});
+
+const isUnsafeStructuredResponse = (parsed) => {
+  const arrays = ['symptoms', 'possibleCauses', 'prevention', 'whenToConsultDoctor'];
+  if (!arrays.every((key) => Array.isArray(parsed[key]) && parsed[key].length > 0)) return true;
+
+  return arrays.some((key) =>
+    parsed[key].some((entry) => {
+      const text = String(entry || '').toLowerCase();
+      return text.length > 140 || /(guaranteed cure|definitely cancer|100% sure|immediate cure)/.test(text);
+    })
+  );
+};
+
+const buildRuleBasedResponse = async (question, userId, language = 'en') => {
   const knowledgeMatches = extractKnowledgeMatches(question);
   const diseaseMatches = await fetchDiseaseMatches(question, knowledgeMatches);
 
   if (knowledgeMatches.length === 0 && diseaseMatches.length === 0) {
     const fallback = buildGeneralFallback();
-    return {
+    return addLanguage({
       ...fallback,
+      confidenceScore: 0.52,
+      promptVersion: PROMPT_VERSION,
       emergencyAlert: '',
       recommendedHospitals: []
-    };
+    }, language);
   }
 
   const symptoms = dedupeNormalized([
@@ -187,44 +300,57 @@ const buildRuleBasedResponse = async (question, userId) => {
   const riskLevel = inferRiskLevel(question);
   const recommendedHospitals = await getRecommendedHospitals(userId, riskLevel, question);
 
-  return {
+  return addLanguage({
     symptoms,
     possibleCauses,
     prevention,
     whenToConsultDoctor,
     riskLevel,
+    confidenceScore: estimateConfidenceScore(knowledgeMatches, diseaseMatches, riskLevel),
+    promptVersion: PROMPT_VERSION,
     emergencyAlert: riskLevel === 'High' ? 'High risk detected. Seek medical help immediately.' : '',
     recommendedHospitals
-  };
+  }, language);
 };
 
-const parseStructuredJson = async (content, question, userId) => {
+const parseStructuredJson = async (content, question, userId, language) => {
   try {
     const parsed = JSON.parse(content);
-    const fallback = await buildRuleBasedResponse(question, userId);
-    return {
-      symptoms: Array.isArray(parsed.symptoms) ? dedupeNormalized(parsed.symptoms, 5) : fallback.symptoms,
-      possibleCauses: Array.isArray(parsed.possibleCauses) ? dedupeNormalized(parsed.possibleCauses, 5) : fallback.possibleCauses,
-      prevention: Array.isArray(parsed.prevention) ? dedupeNormalized(parsed.prevention, 5) : fallback.prevention,
-      whenToConsultDoctor: Array.isArray(parsed.whenToConsultDoctor) ? dedupeNormalized(parsed.whenToConsultDoctor, 4) : fallback.whenToConsultDoctor,
-      riskLevel: ['Low', 'Medium', 'High'].includes(parsed.riskLevel) ? parsed.riskLevel : fallback.riskLevel,
-      emergencyAlert: fallback.emergencyAlert,
-      recommendedHospitals: fallback.recommendedHospitals
-    };
-  } catch (_err) {
-    return buildRuleBasedResponse(question, userId);
+    if (isUnsafeStructuredResponse(parsed)) {
+      return buildRuleBasedResponse(question, userId, language);
+    }
+
+    const knowledgeMatches = extractKnowledgeMatches(question);
+    const diseaseMatches = await fetchDiseaseMatches(question, knowledgeMatches);
+    const riskLevel = ['Low', 'Medium', 'High'].includes(parsed.riskLevel) ? parsed.riskLevel : inferRiskLevel(question);
+    const recommendedHospitals = await getRecommendedHospitals(userId, riskLevel, question);
+
+    return addLanguage({
+      symptoms: dedupeNormalized(parsed.symptoms, 5),
+      possibleCauses: dedupeNormalized(parsed.possibleCauses, 5),
+      prevention: dedupeNormalized(parsed.prevention, 5),
+      whenToConsultDoctor: dedupeNormalized(parsed.whenToConsultDoctor, 4),
+      riskLevel,
+      confidenceScore: estimateConfidenceScore(knowledgeMatches, diseaseMatches, riskLevel),
+      promptVersion: PROMPT_VERSION,
+      emergencyAlert: riskLevel === 'High' ? 'High risk detected. Seek medical help immediately.' : '',
+      recommendedHospitals
+    }, language);
+  } catch (_error) {
+    return buildRuleBasedResponse(question, userId, language);
   }
 };
 
-const getAIResponse = async (question, userId) => {
+const getAIResponse = async (question, userId, language = 'en') => {
   const apiKey = process.env.AI_API_KEY;
   const model = process.env.AI_MODEL || 'gpt-4o-mini';
+  const safeLanguage = SUPPORTED_LANGUAGES.includes(language) ? language : 'en';
 
   if (!apiKey || apiKey === 'replace_with_api_key') {
-    return buildRuleBasedResponse(question, userId);
+    return buildRuleBasedResponse(question, userId, safeLanguage);
   }
 
-  const prompt = `You are a public health awareness assistant. Return strict JSON only with keys: symptoms, possibleCauses, prevention, whenToConsultDoctor, riskLevel. The values for symptoms, possibleCauses, prevention, and whenToConsultDoctor must be arrays of short bullet-style phrases, not long paragraphs. Use riskLevel in [Low, Medium, High]. User question: ${question}`;
+  const prompt = `You are a public health awareness assistant. Return strict JSON only with keys: symptoms, possibleCauses, prevention, whenToConsultDoctor, riskLevel. Values for list fields must be arrays of short bullet-style phrases. Use riskLevel in [Low, Medium, High]. Respond in ${safeLanguage === 'hi' ? 'Hindi' : 'English'}. Do not claim diagnosis certainty. User question: ${question}`;
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -236,7 +362,7 @@ const getAIResponse = async (question, userId) => {
       model,
       temperature: 0.2,
       messages: [
-        { role: 'system', content: 'You generate safe health-awareness information in JSON format.' },
+        { role: 'system', content: 'You generate safe health-awareness information in JSON format with concise lists.' },
         { role: 'user', content: prompt }
       ]
     })
@@ -248,24 +374,29 @@ const getAIResponse = async (question, userId) => {
 
   const data = await response.json();
   const content = data?.choices?.[0]?.message?.content || '{}';
-  return parseStructuredJson(content, question, userId);
+  return parseStructuredJson(content, question, userId, safeLanguage);
 };
 
-const buildResponse = async (question, userId) => {
+const buildResponse = async (question, userId, language = 'en') => {
+  const safeLanguage = SUPPORTED_LANGUAGES.includes(language) ? language : 'en';
+
   try {
-    const aiData = await getAIResponse(question, userId);
+    const aiData = await getAIResponse(question, userId, safeLanguage);
     return {
       ...aiData,
-      disclaimer: 'This information is for awareness only and not a substitute for professional medical advice.'
+      disclaimer: translateText(
+        'This information is for awareness only and not a substitute for professional medical advice.',
+        safeLanguage
+      )
     };
   } catch (error) {
     logger.error('AI generation failed, serving fallback', { error: error.message });
-    const fallback = await buildRuleBasedResponse(question, userId);
+    const fallback = await buildRuleBasedResponse(question, userId, safeLanguage);
     return {
       ...fallback,
-      disclaimer: 'AI service was unavailable, so verified fallback information is shown.'
+      disclaimer: translateText('AI service was unavailable, so verified fallback information is shown.', safeLanguage)
     };
   }
 };
 
-module.exports = { buildResponse };
+module.exports = { buildResponse, PROMPT_VERSION };

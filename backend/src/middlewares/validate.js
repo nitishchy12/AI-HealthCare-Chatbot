@@ -27,7 +27,8 @@ module.exports.schemas = {
     password: Joi.string().required()
   }),
   chat: Joi.object({
-    question: Joi.string().min(5).max(500).required()
+    question: Joi.string().min(5).max(500).required(),
+    language: Joi.string().valid('en', 'hi').optional()
   }),
   hospital: Joi.object({
     name: Joi.string().min(2).max(150).required(),
