@@ -42,8 +42,99 @@ flowchart LR
 
 ```text
 ai-public-health-chatbot/
-  frontend/
+  .github/
+    workflows/
+      ci.yml
+  docs/
+    architecture.md
   backend/
+    src/
+      config/
+        db.js
+        socket.js
+        swagger.js
+      controllers/
+        auth.controller.js
+        chat.controller.js
+        disease.controller.js
+        history.controller.js
+        hospital.controller.js
+        notification.controller.js
+        profile.controller.js
+        report.controller.js
+        symptom.controller.js
+        tip.controller.js
+      middlewares/
+        adminMiddleware.js
+        authMiddleware.js
+        errorHandler.js
+        requestContext.js
+        validate.js
+      models/
+        Chat.js
+        SymptomCheck.js
+      routes/
+        auth.routes.js
+        chat.routes.js
+        disease.routes.js
+        history.routes.js
+        hospital.routes.js
+        notification.routes.js
+        profile.routes.js
+        report.routes.js
+        symptom.routes.js
+        tip.routes.js
+      services/
+        ai.service.js
+      utils/
+        audit.js
+        logger.js
+        sanitize.js
+        seedData.js
+      app.js
+    tests/
+      auth.test.js
+      chat.test.js
+    Dockerfile
+    package.json
+    server.js
+  frontend/
+    src/
+      components/
+        GlobalToast.jsx
+        Navbar.jsx
+        ProtectedRoute.jsx
+      context/
+        AuthContext.jsx
+        LanguageContext.jsx
+      hooks/
+        useAuth.js
+        useLanguage.js
+      pages/
+        AdminPage.jsx
+        ChatbotPage.jsx
+        DashboardPage.jsx
+        HealthHistoryPage.jsx
+        HealthReportsPage.jsx
+        HealthTipsPage.jsx
+        HospitalsPage.jsx
+        LandingPage.jsx
+        LoginPage.jsx
+        NotFoundPage.jsx
+        ProfilePage.jsx
+        RegisterPage.jsx
+        SymptomCheckerPage.jsx
+      services/
+        api.js
+        health.service.js
+        socket.js
+      App.jsx
+      main.jsx
+      styles.css
+    Dockerfile
+    package.json
+    vite.config.js
+  docker-compose.yml
   README.md
 ```
 
@@ -78,6 +169,7 @@ ai-public-health-chatbot/
 - Audit logging for admin CRUD actions and chat history clearing
 - Confidence score and prompt version metadata in chat responses
 - Jest + Supertest API tests for key auth and chat flows
+- GitHub Actions CI pipeline for automated test and build validation
 
 ## Main Pages
 
@@ -176,6 +268,7 @@ Error format:
 ### MongoDB (flexible chat records)
 
 - `chats`: each user query + structured AI output + risk level + confidence score + prompt version + timestamps
+- `symptom_checks`: guided symptom checker submissions, risk score, and timestamps
 
 ### Why PostgreSQL + MongoDB?
 
@@ -234,6 +327,7 @@ Risk classification is based on rule-based symptom severity mapping combined wit
 - API docs available through Swagger UI
 - Dockerfiles provided for frontend and backend
 - `docker-compose.yml` provided for local full-stack startup
+- GitHub Actions CI pipeline runs backend tests and frontend build checks on push and pull request
 
 ## Real-Time Updates
 
@@ -253,6 +347,15 @@ These tests cover:
 - invalid login handling
 - protected chat creation
 - clearing chat history
+
+## CI/CD
+
+- GitHub Actions workflow file: `.github/workflows/ci.yml`
+- Runs on `push` to `main` and on `pull_request`
+- Starts PostgreSQL and MongoDB service containers in CI
+- Installs backend and frontend dependencies
+- Runs backend Jest tests
+- Builds the frontend with Vite
 
 ## Trade-offs
 
@@ -343,6 +446,5 @@ Every AI response includes:
 
 - Geolocation-based nearest hospital suggestions
 - Better risk scoring using medical protocol data
-- Wider automated test coverage and CI checks
+- Wider automated test coverage
 - Optional doctor escalation workflow for high-risk cases
-
