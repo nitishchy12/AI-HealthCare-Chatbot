@@ -2,6 +2,17 @@
 
 A full-stack healthcare project built with a practical implementation focus. The goal is to help users ask symptom-related questions, understand possible risk, review their own health activity, and find hospitals without pretending to be a diagnostic system.
 
+## Production-Ready Features
+
+- Full-stack architecture (`React.js` + `Node.js` + `Express.js`)
+- AI-powered chatbot with verified fallback safety
+- Dual database design (`PostgreSQL` + `MongoDB`)
+- Real-time assessment updates with `Socket.IO`
+- CI/CD pipeline using `GitHub Actions`
+- Dockerized local deployment with `Docker Compose`
+- Swagger API documentation at `/api/docs`
+- Lazy loading and route-based performance optimization
+
 ## Tech Stack
 
 - Frontend: React.js (Vite)
@@ -334,5 +345,4 @@ Every AI response includes:
 - Better risk scoring using medical protocol data
 - Wider automated test coverage and CI checks
 - Optional doctor escalation workflow for high-risk cases
-
 
