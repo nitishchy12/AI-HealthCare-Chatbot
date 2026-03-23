@@ -56,6 +56,15 @@ body {
   margin: 28px auto;
 }
 
+.route-loader {
+  width: min(1000px, 92%);
+  margin: 28px auto;
+  padding: 18px 22px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 12px 28px rgba(17, 39, 65, 0.12);
+}
+
 .card {
   background: rgba(255, 255, 255, 0.88);
   padding: 22px;
