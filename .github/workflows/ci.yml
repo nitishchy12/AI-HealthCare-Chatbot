@@ -2,16 +2,35 @@ name: CI Pipeline
 
 on:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
   pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: healthdb
+        options: >-
+          --health-cmd="pg_isready"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      mongo:
+        image: mongo:6
+        ports:
+          - 27017:27017
+
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -25,18 +44,20 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: backend
-        run: npm ci
+        run: npm install
 
       - name: Run backend tests
         working-directory: backend
         env:
           JWT_SECRET: ci-test-secret
           FRONTEND_URL: http://localhost:5173
+          POSTGRES_URI: postgresql://postgres:postgres@localhost:5432/healthdb
+          MONGO_URI: mongodb://localhost:27017/public_health_chatbot
         run: npm test
 
       - name: Install frontend dependencies
         working-directory: frontend
-        run: npm ci
+        run: npm install
 
       - name: Build frontend
         working-directory: frontend
