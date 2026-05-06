@@ -1,5 +1,13 @@
 node_modules
 .env
+.venv
 dist
 coverage
 CAPSTONE_PROJECT_DESCRIPTION.md
+# Playwright artifacts
+playwright-report/
+test-results/
+# Python cache
+__pycache__/
+*.pyc
+*.pyo

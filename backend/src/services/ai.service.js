@@ -3,6 +3,7 @@ const { logger } = require('../utils/logger');
 
 const PROMPT_VERSION = 'health-awareness-v3';
 const SUPPORTED_LANGUAGES = ['en', 'hi'];
+const DEFAULT_AI_SERVICE_URL = 'http://localhost:8000';
 
 const symptomKnowledge = [
   {
@@ -239,6 +240,17 @@ const translateHospitals = (hospitals, language) => {
   }));
 };
 
+const buildAnswerMarkdown = (payload = {}) => {
+  const parts = [];
+  if (payload.symptoms?.length) parts.push(`**Symptoms noticed:** ${payload.symptoms.join(', ')}`);
+  if (payload.possibleCauses?.length) parts.push(`**Possible causes:** ${payload.possibleCauses.join(', ')}`);
+  if (payload.prevention?.length) parts.push(`**Recommended actions:** ${payload.prevention.join(', ')}`);
+  if (payload.whenToConsultDoctor?.length) parts.push(`**When to seek care:** ${payload.whenToConsultDoctor.join(' ')}`);
+  if (payload.riskLevel) parts.push(`**Risk level:** ${payload.riskLevel}`);
+  if (payload.disclaimer) parts.push(payload.disclaimer);
+  return parts.join('\n\n') || 'Please consult a healthcare professional for personalised advice.';
+};
+
 const addLanguage = (payload, language) => ({
   ...payload,
   symptoms: translateArray(payload.symptoms, language),
@@ -267,40 +279,41 @@ const buildRuleBasedResponse = async (question, userId, language = 'en') => {
 
   if (knowledgeMatches.length === 0 && diseaseMatches.length === 0) {
     const fallback = buildGeneralFallback();
-    return addLanguage({
+    const payload = addLanguage({
       ...fallback,
       confidenceScore: 0.52,
       promptVersion: PROMPT_VERSION,
       emergencyAlert: '',
       recommendedHospitals: []
     }, language);
+    return { ...payload, answerMd: buildAnswerMarkdown(payload) };
   }
 
   const symptoms = dedupeNormalized([
     ...knowledgeMatches.flatMap((item) => item.symptoms),
-    ...diseaseMatches.flatMap((item) => item.symptoms.split(',').map((part) => part.trim()))
+    ...diseaseMatches.flatMap((item) => (item.symptoms || '').split(',').map((part) => part.trim()).filter(Boolean))
   ], 5);
 
   const possibleCauses = dedupeNormalized([
     ...knowledgeMatches.flatMap((item) => item.causes),
     ...diseaseMatches.map((item) => item.disease_name),
-    ...diseaseMatches.flatMap((item) => item.risk_factors.split(',').map((part) => part.trim()))
+    ...diseaseMatches.flatMap((item) => (item.risk_factors || '').split(',').map((part) => part.trim()).filter(Boolean))
   ], 5);
 
   const prevention = dedupeNormalized([
     ...knowledgeMatches.flatMap((item) => item.prevention),
-    ...diseaseMatches.flatMap((item) => item.prevention.split(',').map((part) => part.trim()))
+    ...diseaseMatches.flatMap((item) => (item.prevention || '').split(',').map((part) => part.trim()).filter(Boolean))
   ], 5);
 
   const whenToConsultDoctor = dedupeNormalized([
     ...knowledgeMatches.flatMap((item) => item.whenToConsultDoctor),
-    ...diseaseMatches.flatMap((item) => item.treatment.split(',').map((part) => part.trim()))
+    ...diseaseMatches.flatMap((item) => (item.treatment || '').split(',').map((part) => part.trim()).filter(Boolean))
   ], 4);
 
   const riskLevel = inferRiskLevel(question);
   const recommendedHospitals = await getRecommendedHospitals(userId, riskLevel, question);
 
-  return addLanguage({
+  const payload = addLanguage({
     symptoms,
     possibleCauses,
     prevention,
@@ -311,6 +324,7 @@ const buildRuleBasedResponse = async (question, userId, language = 'en') => {
     emergencyAlert: riskLevel === 'High' ? 'High risk detected. Seek medical help immediately.' : '',
     recommendedHospitals
   }, language);
+  return { ...payload, answerMd: buildAnswerMarkdown(payload) };
 };
 
 const parseStructuredJson = async (content, question, userId, language) => {
@@ -377,24 +391,85 @@ const getAIResponse = async (question, userId, language = 'en') => {
   return parseStructuredJson(content, question, userId, safeLanguage);
 };
 
-const buildResponse = async (question, userId, language = 'en') => {
+const normalizeAssessmentResponse = (data = {}) => {
+  const normalized = {
+    answerMd: data.answer_md || '',
+    symptoms: data.symptoms_detected || [],
+    possibleCauses: data.possible_causes || [],
+    prevention: data.recommended_actions || [],
+    whenToConsultDoctor: data.when_to_seek_care ? [data.when_to_seek_care] : [],
+    riskLevel: data.risk_level || 'Low',
+    confidenceScore: data.confidence ?? 0.5,
+    promptVersion: data.prompt_version || '',
+    emergencyAlert: data.emergency ? 'High risk detected. Seek medical help immediately.' : '',
+    recommendedHospitals: [],
+    citations: data.citations || [],
+    followUpQuestions: data.follow_up_questions || [],
+    specialistsSuggested: data.specialists_suggested || [],
+    disclaimer: data.disclaimer || '',
+    latencyMs: data.latency_ms || 0,
+  };
+
+  normalized.answerMd = normalized.answerMd || buildAnswerMarkdown(normalized);
+  return normalized;
+};
+
+const callAIService = async (question, userId, language, contextMessages = [], authHeader = '') => {
+  const baseUrl = (process.env.AI_SERVICE_URL || DEFAULT_AI_SERVICE_URL).replace(/\/$/, '');
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), Number(process.env.AI_SERVICE_TIMEOUT_MS) || 8000);
+
+  const response = await fetch(`${baseUrl}/api/chat/assess`, {
+    method: 'POST',
+    signal: controller.signal,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(authHeader ? { Authorization: authHeader } : {}),
+    },
+    body: JSON.stringify({
+      question,
+      language,
+      user_id: userId,
+      conversation_history: contextMessages.map((msg) => ({
+        role: msg.role === 'assistant' ? 'assistant' : 'user',
+        content: msg.content || '',
+      })).filter((msg) => msg.content),
+    }),
+  }).finally(() => clearTimeout(timeout));
+
+  if (!response.ok) {
+    throw new Error(`AI service failed with status ${response.status}`);
+  }
+
+  return normalizeAssessmentResponse(await response.json());
+};
+
+const buildResponse = async (question, userId, language = 'en', contextMessages = [], authHeader = '') => {
   const safeLanguage = SUPPORTED_LANGUAGES.includes(language) ? language : 'en';
 
   try {
-    const aiData = await getAIResponse(question, userId, safeLanguage);
+    const aiData = authHeader
+      ? await callAIService(question, userId, safeLanguage, contextMessages, authHeader)
+      : await getAIResponse(question, userId, safeLanguage);
+
+    const disclaimer = aiData.disclaimer || translateText(
+      'This information is for awareness only and not a substitute for professional medical advice.',
+      safeLanguage
+    );
+
     return {
       ...aiData,
-      disclaimer: translateText(
-        'This information is for awareness only and not a substitute for professional medical advice.',
-        safeLanguage
-      )
+      disclaimer,
+      answerMd: aiData.answerMd || buildAnswerMarkdown({ ...aiData, disclaimer }),
     };
   } catch (error) {
     logger.error('AI generation failed, serving fallback', { error: error.message });
     const fallback = await buildRuleBasedResponse(question, userId, safeLanguage);
+    const disclaimer = translateText('AI service was unavailable, so verified fallback information is shown.', safeLanguage);
     return {
       ...fallback,
-      disclaimer: translateText('AI service was unavailable, so verified fallback information is shown.', safeLanguage)
+      disclaimer,
+      answerMd: buildAnswerMarkdown({ ...fallback, disclaimer }),
     };
   }
 };

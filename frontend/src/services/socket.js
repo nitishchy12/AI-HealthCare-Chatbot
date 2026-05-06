@@ -6,7 +6,17 @@ export function connectSocket(token) {
   if (!token) return null;
   if (socket) return socket;
 
-  socket = io(import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000', {
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  let socketUrl = 'http://localhost:5004';
+  if (apiBaseUrl) {
+    try {
+      socketUrl = new URL(apiBaseUrl).origin;
+    } catch (_e) {
+      // ignore invalid URL and keep default
+    }
+  }
+
+  socket = io(socketUrl, {
     transports: ['websocket'],
     auth: { token }
   });

@@ -1,20 +1,41 @@
-const router = require('express').Router();
+const router    = require('express').Router();
 const rateLimit = require('express-rate-limit');
-const { register, login } = require('../controllers/auth.controller');
-const validate = require('../middlewares/validate');
+const {
+  register, login, twoFactorLogin,
+  refresh, logout, logoutAll,
+  setup2FA, verify2FA, disable2FA,
+} = require('../controllers/auth.controller');
+const validate    = require('../middlewares/validate');
 const { schemas } = require('../middlewares/validate');
+const auth        = require('../middlewares/authMiddleware');
+const {
+  AUTH_RATE_LIMIT_WINDOW_MS,
+  AUTH_RATE_LIMIT_MAX,
+} = require('../config/constants');
 
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
+const authLimiter = rateLimit({
+  windowMs: AUTH_RATE_LIMIT_WINDOW_MS,
+  max:      AUTH_RATE_LIMIT_MAX,
+  standardHeaders: true,
+  legacyHeaders:   false,
   message: {
     success: false,
-    message: 'Rate limit exceeded',
-    error: 'Too many login attempts. Please try again after 15 minutes.'
-  }
+    message: 'Too many requests. Please try again later.',
+    error:   'RATE_LIMITED',
+  },
 });
 
-router.post('/register', validate(schemas.register), register);
-router.post('/login', loginLimiter, validate(schemas.login), login);
+// Public
+router.post('/register',    authLimiter, validate(schemas.register),   register);
+router.post('/login',       authLimiter, validate(schemas.login),       login);
+router.post('/2fa/login',   authLimiter,                                twoFactorLogin);
+router.post('/refresh',                                                  refresh);
+router.post('/logout',                                                   logout);
+
+// Authenticated
+router.post('/logout-all',  auth,        logoutAll);
+router.post('/2fa/setup',   auth,        setup2FA);
+router.post('/2fa/verify',  auth,        validate(schemas.totpVerify),  verify2FA);
+router.post('/2fa/disable', auth,        validate(schemas.totpDisable), disable2FA);
 
 module.exports = router;

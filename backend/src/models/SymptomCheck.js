@@ -14,7 +14,16 @@ const symptomCheckSchema = new mongoose.Schema(
     riskLevel: { type: String, enum: ['Low', 'Medium', 'High'], required: true },
     possibleDisease: { type: String, required: true },
     emergency: { type: Boolean, default: false },
-    recommendations: [{ type: String }]
+    recommendations: [{ type: String }],
+    riskReasoning: { type: String, default: '' },
+    specialistsSuggested: [{ type: String }],
+    disclaimer: { type: String, default: 'This assessment is for health awareness only and is not a medical diagnosis. Consult a qualified healthcare professional for medical advice.' },
+    profileSnapshot: {
+      age: { type: Number, default: null },
+      gender: { type: String, default: '' },
+      city: { type: String, default: '' },
+      medical_notes: { type: String, default: '' }
+    }
   },
   { timestamps: true }
 );

@@ -9,7 +9,7 @@ module.exports = swaggerJsdoc({
       description: 'API documentation for auth, chat, history, reports, profile, hospitals, and admin operations.'
     },
     servers: [
-      { url: 'http://localhost:5000/api' }
+      { url: 'http://localhost:5004/api' }
     ],
     components: {
       securitySchemes: {

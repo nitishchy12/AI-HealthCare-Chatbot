@@ -1,0 +1,71 @@
+/* ── Design Tokens ────────────────────────────────────────────────── */
+:root {
+  /* Primary — Medical Teal */
+  --color-primary:       #0F766E;
+  --color-primary-hover: #0D5F58;
+  --color-primary-light: #CCFBF1;
+
+  /* Accent — Indigo (AI features) */
+  --color-accent:       #6366F1;
+  --color-accent-hover: #4F46E5;
+  --color-accent-light: #EEF2FF;
+
+  /* Semantic */
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-danger:  #EF4444;
+
+  /* Surface & Background */
+  --color-surface:     #FFFFFF;
+  --color-background:  #F8FAFC;
+  --color-surface-raised: #FFFFFF;
+
+  /* Text */
+  --color-text-primary: #0F172A;
+  --color-text-muted:   #64748B;
+  --color-text-subtle:  #94A3B8;
+
+  /* Border */
+  --color-border:       #E2E8F0;
+  --color-border-focus: #0F766E;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04);
+  --shadow-md: 0 4px 12px rgba(15,23,42,0.08), 0 2px 6px rgba(15,23,42,0.05);
+  --shadow-lg: 0 16px 40px rgba(15,23,42,0.12), 0 4px 16px rgba(15,23,42,0.08);
+  --shadow-xl: 0 24px 60px rgba(15,23,42,0.16), 0 8px 24px rgba(15,23,42,0.10);
+
+  /* Radius */
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   16px;
+  --radius-full: 9999px;
+
+  /* Typography */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Transitions */
+  --transition-fast:   120ms ease;
+  --transition-normal: 200ms ease;
+  --transition-slow:   300ms ease;
+}
+
+/* ── Dark Mode Tokens ─────────────────────────────────────────────── */
+.dark {
+  --color-surface:        #0F172A;
+  --color-background:     #020617;
+  --color-surface-raised: #1E293B;
+
+  --color-text-primary: #F1F5F9;
+  --color-text-muted:   #94A3B8;
+  --color-text-subtle:  #64748B;
+
+  --color-border:       #1E293B;
+  --color-border-focus: #0F766E;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 16px 40px rgba(0,0,0,0.5);
+  --shadow-xl: 0 24px 60px rgba(0,0,0,0.6);
+}
