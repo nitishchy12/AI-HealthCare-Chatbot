@@ -13,11 +13,12 @@ import { cn } from '../lib/cn';
 
 const DEFAULT_CENTER = [20.5937, 78.9629];
 const DEFAULT_SPECIALTIES = [
-  'General Physician', 'Cardiologist', 'Pulmonologist', 'Neurologist', 'Pediatrician',
+  'General Physician', 'Cardiologist', 'Neurologist', 'Orthopedic',
+  'Pediatrician', 'ENT', 'Dermatologist', 'Emergency Care',
 ];
-// Extended radius options as required: 2, 5, 10, 20, 50, 100 km + Any distance
 const DISTANCE_OPTIONS = [2, 5, 10, 20, 50, 100, 0];
 const SYMPTOM_RESULT_TTL_MS = 30 * 60 * 1000;
+const QUICK_CITIES = ['Delhi', 'Mumbai', 'Bangalore', 'Chennai', 'Jalandhar'];
 
 // Haversine distance in km between two lat/lng points
 function haversineKm(lat1, lng1, lat2, lng2) {
@@ -495,6 +496,28 @@ export default function HospitalsPage() {
             </div>
           )}
 
+          {/* Quick city chips — disabled when location is active */}
+          {!userLocation && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-text-subtle">{t.quickSearch}:</span>
+              {QUICK_CITIES.map((quickCity) => (
+                <button
+                  key={quickCity}
+                  type="button"
+                  onClick={() => setCity(quickCity)}
+                  className={cn(
+                    'rounded-full border px-3 py-1 text-xs font-medium transition-colors',
+                    city === quickCity
+                      ? 'border-primary bg-primary text-white'
+                      : 'border-border bg-white text-text-primary hover:border-primary/60 hover:text-primary dark:border-border-dark dark:bg-surface-dark dark:text-text-dark',
+                  )}
+                >
+                  {quickCity}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Filter row */}
           <div className="grid gap-2 md:grid-cols-[minmax(180px,1fr)_220px_160px_200px]">
 
@@ -617,7 +640,11 @@ export default function HospitalsPage() {
             <EmptyState
               icon={AlertCircle}
               title={t.noHospitalsFound}
-              description={t.tryDifferentSearch}
+              description={
+                userLocation && radius > 0
+                  ? `${t.noHospitalsWithinRadius} ${radius} km. ${t.tryIncreasingRadius}`
+                  : t.tryDifferentSearch
+              }
               className="py-16"
             />
           )}

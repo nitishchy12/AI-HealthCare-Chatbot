@@ -107,6 +107,30 @@ const ensureConstraints = async () => {
     ALTER TABLE hospitals
     ADD COLUMN IF NOT EXISTS specialization VARCHAR(100) NOT NULL DEFAULT 'General Physician';
   `);
+
+  await pool.query(`
+    ALTER TABLE hospitals
+    ADD COLUMN IF NOT EXISTS emergency_24h BOOLEAN DEFAULT false;
+  `);
+
+  await pool.query(`
+    ALTER TABLE hospitals
+    ADD COLUMN IF NOT EXISTS specialties TEXT[] DEFAULT '{}';
+  `);
+
+  await pool.query(`
+    ALTER TABLE hospitals
+    ADD COLUMN IF NOT EXISTS state VARCHAR(100);
+  `);
+
+  // Backfill specialties from specialization for existing rows
+  await pool.query(`
+    UPDATE hospitals
+    SET specialties = ARRAY[specialization]
+    WHERE (specialties IS NULL OR specialties = '{}')
+      AND specialization IS NOT NULL
+      AND specialization <> '';
+  `);
 };
 
 const connectPostgres = async () => {
