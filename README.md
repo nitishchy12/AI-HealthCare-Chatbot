@@ -218,6 +218,16 @@ UPDATE users SET role = 'admin' WHERE email = 'your@email.com';
 
 ---
 
+## Docker Images
+
+```bash
+docker pull nitishchy12/health-backend:latest
+docker pull nitishchy12/health-frontend:latest
+docker pull nitishchy12/health-ai:latest
+```
+
+---
+
 ## Full Docker Stack
 
 ```bash
