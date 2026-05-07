@@ -12,7 +12,11 @@ _client: QdrantClient | None = None
 def init_client(settings: Settings) -> None:
     global _client
     logger.info(f"Connecting to Qdrant at {settings.qdrant_url}")
-    _client = QdrantClient(url=settings.qdrant_url, timeout=10)
+    _client = QdrantClient(
+        url=settings.qdrant_url,
+        api_key=settings.qdrant_api_key or None,
+        timeout=10,
+    )
     _bootstrap_collection(settings)
     logger.info("Qdrant client ready")
 

@@ -305,7 +305,11 @@ def main(force: bool = False) -> None:
     settings = get_settings()
 
     logger.info(f"Connecting to Qdrant at {settings.qdrant_url}")
-    client = QdrantClient(url=settings.qdrant_url, timeout=15)
+    client = QdrantClient(
+        url=settings.qdrant_url,
+        api_key=settings.qdrant_api_key or None,
+        timeout=15,
+    )
 
     # Bootstrap collection
     existing = [c.name for c in client.get_collections().collections]

@@ -16,6 +16,7 @@ class Settings(BaseSettings):
 
     # ── Vector DB ──────────────────────────────────────────────────
     qdrant_url: str = "http://localhost:6333"
+    qdrant_api_key: str = ""               # required for Qdrant Cloud, empty for local
     collection_name: str = "medical_knowledge"
     embedding_model: str = "all-MiniLM-L6-v2"
     embedding_dim: int = 384
