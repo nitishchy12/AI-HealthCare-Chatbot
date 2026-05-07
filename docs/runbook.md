@@ -163,7 +163,7 @@ uvicorn main:app --reload   # loguru to stdout
 psql postgresql://postgres:postgres@localhost:5433/public_health
 
 # MongoDB
-mongosh mongodb://localhost:27017/public_health_chatbot
+mongosh "mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/healthbot"
 
 # Redis
 redis-cli -p 6379

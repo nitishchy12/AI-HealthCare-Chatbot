@@ -18,20 +18,6 @@ services:
       retries: 10
       start_period: 10s
 
-  mongodb:
-    image: mongo:7
-    container_name: health-mongo
-    ports:
-      - '27017:27017'
-    volumes:
-      - mongo_data:/data/db
-    healthcheck:
-      test: ['CMD-SHELL', 'mongosh --quiet --eval "db.adminCommand({ ping: 1 }).ok"']
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
-
   redis:
     image: redis:7-alpine
     container_name: health-redis
@@ -71,8 +57,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      mongodb:
-        condition: service_healthy
       redis:
         condition: service_healthy
     environment:
@@ -80,16 +64,16 @@ services:
       NODE_ENV: production
       DB_STARTUP_RETRIES: 15
       DB_STARTUP_DELAY_MS: 4000
-      JWT_SECRET: change_me_strong_secret
+      JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: 15m
       POSTGRES_URI: postgresql://postgres:postgres@postgres:5432/public_health
-      MONGO_URI: mongodb://mongodb:27017/public_health_chatbot
+      MONGO_URI: ${MONGO_URI}
       REDIS_URL: redis://redis:6379
       AI_PROVIDER: openai
-      AI_API_KEY: replace_with_api_key
+      AI_API_KEY: ${AI_API_KEY}
       AI_MODEL: gpt-4o-mini
       AI_SERVICE_URL: http://ai-service:8000
-      FRONTEND_URL: http://localhost:5173
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
     ports:
       - '5004:5004'
     restart: unless-stopped
@@ -112,9 +96,9 @@ services:
         condition: service_healthy
     environment:
       APP_ENV: production
-      JWT_SECRET: change_me_strong_secret
+      JWT_SECRET: ${JWT_SECRET}
       AI_PROVIDER: openai
-      AI_API_KEY: replace_with_api_key
+      AI_API_KEY: ${AI_API_KEY}
       AI_MODEL: gpt-4o-mini
       QDRANT_URL: http://qdrant:6333
       REDIS_URL: redis://redis:6379
@@ -136,6 +120,5 @@ services:
 
 volumes:
   postgres_data:
-  mongo_data:
   redis_data:
   qdrant_data:

@@ -1,13 +1,64 @@
+# ── Dependencies ─────────────────────────────────────────────────────────────
 node_modules
-.env
 .venv
+
+# ── Build outputs ─────────────────────────────────────────────────────────────
 dist
+
+# ── Environment / secrets — NEVER commit these ───────────────────────────────
+.env
+.env.*
+**/.env
+**/.env.*
+
+# ── Personal / capstone documents — local study material, not project code ───
 coverage
 CAPSTONE_PROJECT_DESCRIPTION.md
-# Playwright artifacts
-playwright-report/
-test-results/
-# Python cache
+NOTES.md
+PERSONAL.md
+TODO.md
+INTERVIEW*.md
+*_HANDBOOK.*
+*_PREP.md
+SUBMISSION*.md
+*_NOTES.md
+
+# ── IDE and editor files ──────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.user
+.vs/
+*.swp
+*.swo
+
+# ── OS generated files ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# ── Log files ─────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Temp and backup files ─────────────────────────────────────────────────────
+*.tmp
+*.temp
+*.bak
+*.backup
+*.orig
+*.rej
+
+# ── Python cache ──────────────────────────────────────────────────────────────
 __pycache__/
 *.pyc
 *.pyo
+.pytest_cache/
+
+# ── Test and coverage artifacts ───────────────────────────────────────────────
+playwright-report/
+test-results/
+.nyc_output/

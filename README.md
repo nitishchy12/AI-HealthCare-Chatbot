@@ -121,7 +121,7 @@ Question
 ├── docs/                    Architecture, data model, security.md, runbook, ADRs
 │   └── screenshots/         UI screenshots (see docs/screenshots/)
 ├── .github/workflows/       6-job CI pipeline (includes Playwright E2E)
-├── docker-compose.yml       7 services with health checks
+├── docker-compose.yml       6 services with health checks (MongoDB on Atlas)
 └── Makefile                 dev, test, migrate, seed, logs, clean targets
 ```
 
@@ -153,10 +153,10 @@ Edit `backend/.env` and set `JWT_SECRET` to a strong random string (32+ characte
 ### 2. Start infrastructure
 
 ```bash
-docker compose up -d postgres mongodb redis qdrant
+docker compose up -d postgres redis qdrant
 ```
 
-Wait approximately 15 seconds for all health checks to pass:
+MongoDB is hosted on Atlas — no local container needed. Wait approximately 15 seconds for health checks:
 
 ```bash
 docker compose ps    # all four should show "healthy"
@@ -324,7 +324,7 @@ NODE_ENV=development
 JWT_SECRET=change_me_strong_secret_min_32_chars
 
 POSTGRES_URI=postgresql://postgres:postgres@localhost:5433/public_health
-MONGO_URI=mongodb://localhost:27017/public_health_chatbot
+MONGO_URI=mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/healthbot?retryWrites=true&w=majority&appName=Cluster0
 REDIS_URL=redis://localhost:6379
 
 # Supported: openai | anthropic
@@ -556,4 +556,4 @@ HealthBot is a health awareness tool. It is not a medical diagnosis system. Ever
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE) for details.

@@ -13,14 +13,14 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useTheme } from '../context/ThemeContext';
 import { cn } from '../lib/cn';
 
-const navLinks = [
-  { to: '/dashboard',       label: 'Dashboard',      icon: LayoutDashboard, auth: true  },
-  { to: '/chat',            label: 'Chat',            icon: MessageSquare,   auth: true  },
-  { to: '/symptom-checker', label: 'Symptoms',        icon: Activity,        auth: true  },
-  { to: '/history',         label: 'History',         icon: History,         auth: true  },
-  { to: '/reports',         label: 'Reports',         icon: BarChart2,       auth: true  },
-  { to: '/tips',            label: 'Health Tips',     icon: Lightbulb,       auth: false },
-  { to: '/hospitals',       label: 'Hospitals',       icon: Hospital,        auth: false },
+const NAV_CONFIG = [
+  { to: '/dashboard',       tk: 'dashboard',    icon: LayoutDashboard, auth: true  },
+  { to: '/chat',            tk: 'chat',         icon: MessageSquare,   auth: true  },
+  { to: '/symptom-checker', tk: 'symptoms',     icon: Activity,        auth: true  },
+  { to: '/history',         tk: 'history',      icon: History,         auth: true  },
+  { to: '/reports',         tk: 'reports',      icon: BarChart2,       auth: true  },
+  { to: '/tips',            tk: 'healthTips',   icon: Lightbulb,       auth: false },
+  { to: '/hospitals',       tk: 'hospitals',    icon: Hospital,        auth: false },
 ];
 
 function HealthBotLogo() {
@@ -59,11 +59,12 @@ function NavItem({ to, label, icon: Icon, onClick }) {
 
 export default function Navbar() {
   const { token, user, logout } = useAuth();
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const navLinks = NAV_CONFIG.map((l) => ({ ...l, label: t[l.tk] || l.tk }));
   const visibleLinks = navLinks.filter((l) => !l.auth || token);
 
   const handleLogout = () => {
@@ -166,9 +167,9 @@ export default function Navbar() {
                   </div>
 
                   {[
-                    { icon: User,     label: 'Profile',     to: '/profile' },
-                    { icon: Settings, label: 'Settings',    to: '/profile' },
-                    ...(user.role === 'admin' ? [{ icon: Shield, label: 'Admin Panel', to: '/admin' }] : []),
+                    { icon: User,     label: t.profile,    to: '/profile' },
+                    { icon: Settings, label: t.settings,   to: '/profile' },
+                    ...(user.role === 'admin' ? [{ icon: Shield, label: t.adminPanel, to: '/admin' }] : []),
                   ].map(({ icon: Icon, label, to }) => (
                     <DropdownMenu.Item
                       key={label}
@@ -187,7 +188,7 @@ export default function Navbar() {
                     className="flex items-center gap-2.5 px-3 py-2 rounded text-sm text-danger hover:bg-danger/8 dark:hover:bg-danger/15 cursor-pointer outline-none transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
-                    Sign out
+                    {t.signOut}
                   </DropdownMenu.Item>
                 </DropdownMenu.Content>
               </DropdownMenu.Portal>
@@ -197,7 +198,7 @@ export default function Navbar() {
               to="/login"
               className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded text-sm font-medium bg-primary text-white hover:bg-primary-hover transition-colors shadow-sm"
             >
-              Sign in
+              {t.signIn}
             </NavLink>
           )}
 
@@ -224,7 +225,7 @@ export default function Navbar() {
               onClick={() => setMobileOpen(false)}
               className="flex items-center gap-2 px-3 py-2 rounded text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
             >
-              Sign in
+              {t.signIn}
             </NavLink>
           )}
         </div>

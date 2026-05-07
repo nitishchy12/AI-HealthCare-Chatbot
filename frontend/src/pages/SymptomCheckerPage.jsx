@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../services/api';
+import { useLanguage } from '../hooks/useLanguage';
 import {
   addConversationSystemMessage,
   createConversation,
@@ -27,13 +28,7 @@ const PRIMARY_SYMPTOMS = [
   'Ear pain', 'Loss of appetite', 'Sweating',
 ];
 
-const STEPS = [
-  'Primary Symptoms',
-  'Duration & Severity',
-  'Associated Symptoms',
-  'Health Profile',
-  'Result',
-];
+// STEPS is derived from translations inside the component
 
 const DURATIONS = [
   { value: 'today', label: 'Today', days: 0 },
@@ -56,11 +51,11 @@ const riskColor = {
   High: 'text-red-700 dark:text-red-400',
 };
 
-function StepProgress({ step }) {
+function StepProgress({ step, steps }) {
   return (
     <div className="mb-6">
       <div className="flex items-center justify-center gap-3">
-        {STEPS.map((label, index) => (
+        {steps.map((label, index) => (
           <div key={label} className="flex items-center">
             <div
               className={cn(
@@ -71,13 +66,13 @@ function StepProgress({ step }) {
               )}
               aria-label={label}
             />
-            {index < STEPS.length - 1 && (
+            {index < steps.length - 1 && (
               <div className={cn('mx-2 h-0.5 w-8 sm:w-14', index < step ? 'bg-teal-800' : 'bg-slate-300 dark:bg-slate-700')} />
             )}
           </div>
         ))}
       </div>
-      <p className="mt-3 text-center text-sm font-medium text-text-muted">{STEPS[step]}</p>
+      <p className="mt-3 text-center text-sm font-medium text-text-muted">{steps[step]}</p>
     </div>
   );
 }
@@ -112,6 +107,16 @@ const normalizeResult = (result) => ({
 
 export default function SymptomCheckerPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
+
+  const STEPS = [
+    t.stepPrimarySymptoms,
+    t.stepDurationSeverity,
+    t.stepAssociatedSymptoms,
+    t.stepHealthProfile,
+    t.stepResult,
+  ];
+
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
@@ -227,7 +232,7 @@ export default function SymptomCheckerPage() {
         setHospitals([]);
       }
     } catch (error) {
-      toast.error(error?.response?.data?.message || 'Analysis failed. Please try again.');
+      toast.error(error?.response?.data?.message || t.analysisFailedRetry);
     } finally {
       setSubmitting(false);
     }
@@ -269,14 +274,14 @@ export default function SymptomCheckerPage() {
       }
       navigate('/chat');
     } catch {
-      toast.error('Could not open chat. Please navigate to Chat manually.');
+      toast.error(t.couldNotOpenChat);
       navigate('/chat');
     }
   };
 
   const saveToHistory = () => {
-    setSavedHint('Saved to your health history.');
-    toast.success('Symptom check saved to history');
+    setSavedHint(t.savedToHistory);
+    toast.success(t.savedToHistory);
   };
 
   const restart = () => {
@@ -297,23 +302,23 @@ export default function SymptomCheckerPage() {
     <div className="min-h-[calc(100vh-56px)] bg-background px-4 py-8 dark:bg-background-dark">
       <div className="mx-auto max-w-3xl">
         <div className="mb-6">
-          <p className="text-xs font-semibold uppercase tracking-wider text-primary">Guided Triage</p>
-          <h1 className="mt-1 text-2xl font-bold text-text-primary dark:text-text-dark">Symptom Checker</h1>
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary">{t.guidedTriage}</p>
+          <h1 className="mt-1 text-2xl font-bold text-text-primary dark:text-text-dark">{t.symptomChecker}</h1>
         </div>
 
-        <StepProgress step={step} />
+        <StepProgress step={step} steps={STEPS} />
 
         <AnimatePresence mode="wait">
           <motion.div key={step} {...stepMotion}>
             {step === 0 && (
               <Card padding="lg" className="space-y-4">
-                <h2 className="text-base font-semibold text-text-primary dark:text-text-dark">Select your primary symptoms</h2>
+                <h2 className="text-base font-semibold text-text-primary dark:text-text-dark">{t.selectPrimarySymptoms}</h2>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-subtle" />
                   <input
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Search symptoms"
+                    placeholder={t.searchSymptoms}
                     className="h-10 w-full rounded border border-border bg-white pl-9 pr-3 text-sm text-text-primary outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 dark:border-border-dark dark:bg-surface-dark dark:text-text-dark"
                   />
                 </div>
@@ -321,14 +326,14 @@ export default function SymptomCheckerPage() {
                   {visibleSymptoms.map((symptom) => (
                     <Chip key={symptom} label={symptom} selected={primarySymptoms.includes(symptom)} onClick={() => togglePrimary(symptom)} />
                   ))}
-                  <Chip label="Other" selected={otherOpen || otherText.trim().length > 0} onClick={() => setOtherOpen(true)} />
+                  <Chip label={t.other} selected={otherOpen || otherText.trim().length > 0} onClick={() => setOtherOpen(true)} />
                 </div>
                 {otherOpen && (
                   <div className="flex gap-2">
                     <input
                       value={otherText}
                       onChange={(event) => setOtherText(event.target.value)}
-                      placeholder="Describe other symptom"
+                      placeholder={t.describeOtherSymptom}
                       className="h-10 flex-1 rounded border border-border bg-white px-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 dark:border-border-dark dark:bg-surface-dark"
                     />
                     <Button variant="ghost" size="sm" onClick={() => { setOtherText(''); setOtherOpen(false); }} aria-label="Clear other symptom">
@@ -336,14 +341,14 @@ export default function SymptomCheckerPage() {
                     </Button>
                   </div>
                 )}
-                {visibleSymptoms.length === 0 && <p className="text-sm text-text-muted">No symptoms match your search.</p>}
+                {visibleSymptoms.length === 0 && <p className="text-sm text-text-muted">{t.noSymptomsMatch}</p>}
               </Card>
             )}
 
             {step === 1 && (
               <Card padding="lg" className="space-y-6">
                 <div>
-                  <h2 className="text-base font-semibold text-text-primary dark:text-text-dark">Duration</h2>
+                  <h2 className="text-base font-semibold text-text-primary dark:text-text-dark">{t.duration}</h2>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {DURATIONS.map((item) => (
                       <button
@@ -364,7 +369,7 @@ export default function SymptomCheckerPage() {
                 </div>
                 <div>
                   <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="font-semibold text-text-primary dark:text-text-dark">Severity</span>
+                    <span className="font-semibold text-text-primary dark:text-text-dark">{t.severity}</span>
                     <span className={cn('font-bold', severity >= 8 ? riskColor.High : severity >= 5 ? riskColor.Medium : riskColor.Low)}>
                       {severity}/10
                     </span>
@@ -378,9 +383,9 @@ export default function SymptomCheckerPage() {
                     className="w-full accent-primary"
                   />
                   <div className="mt-1 flex justify-between text-xs text-text-muted">
-                    <span>1 = Mild</span>
-                    <span>5 = Moderate</span>
-                    <span>10 = Severe</span>
+                    <span>{t.mildLabel}</span>
+                    <span>{t.moderateLabel}</span>
+                    <span>{t.severeLabel}</span>
                   </div>
                 </div>
               </Card>
@@ -388,7 +393,7 @@ export default function SymptomCheckerPage() {
 
             {step === 2 && (
               <Card padding="lg" className="space-y-4">
-                <h2 className="text-base font-semibold text-text-primary dark:text-text-dark">Associated symptoms</h2>
+                <h2 className="text-base font-semibold text-text-primary dark:text-text-dark">{t.associatedSymptoms}</h2>
                 {relatedLoading ? (
                   <div className="flex items-center justify-center py-8"><Spinner size="md" className="text-primary" /></div>
                 ) : (
@@ -397,7 +402,7 @@ export default function SymptomCheckerPage() {
                       <Chip key={symptom} label={symptom} selected={associatedSymptoms.includes(symptom)} onClick={() => toggleAssociated(symptom)} />
                     ))}
                     <Chip
-                      label="None of these"
+                      label={t.noneOfThese}
                       selected={noneRelated}
                       onClick={() => {
                         setAssociatedSymptoms([]);
@@ -411,10 +416,10 @@ export default function SymptomCheckerPage() {
 
             {step === 3 && (
               <Card padding="lg" className="space-y-4">
-                <h2 className="text-base font-semibold text-text-primary dark:text-text-dark">Health profile snapshot</h2>
+                <h2 className="text-base font-semibold text-text-primary dark:text-text-dark">{t.healthProfileSnapshot}</h2>
                 <div className="grid gap-3 sm:grid-cols-3">
                   <label className="space-y-1 text-xs font-medium text-text-muted">
-                    Age
+                    {t.age}
                     <input
                       type="number"
                       min="1"
@@ -425,31 +430,31 @@ export default function SymptomCheckerPage() {
                     />
                   </label>
                   <label className="space-y-1 text-xs font-medium text-text-muted">
-                    Gender
+                    {t.gender}
                     <select
                       value={profile.gender}
                       onChange={(event) => setProfile((current) => ({ ...current, gender: event.target.value }))}
                       className="h-10 w-full rounded border border-border bg-white px-3 text-sm text-text-primary outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 dark:border-border-dark dark:bg-surface-dark dark:text-text-dark"
                     >
-                      <option value="">Not specified</option>
-                      <option>Male</option>
-                      <option>Female</option>
-                      <option>Other</option>
-                      <option>Prefer not to say</option>
+                      <option value="">{t.genderNotSpecified}</option>
+                      <option value="Male">{t.genderMale}</option>
+                      <option value="Female">{t.genderFemale}</option>
+                      <option value="Other">{t.genderOther}</option>
+                      <option value="Prefer not to say">{t.genderPreferNot}</option>
                     </select>
                   </label>
                   <label className="space-y-1 text-xs font-medium text-text-muted">
-                    City
+                    {t.city}
                     <input
                       value={profile.city}
                       onChange={(event) => setProfile((current) => ({ ...current, city: event.target.value }))}
-                      placeholder="e.g. Phagwara"
+                      placeholder={t.cityPlaceholderShort}
                       className="h-10 w-full rounded border border-border bg-white px-3 text-sm text-text-primary outline-none focus:border-primary focus:ring-2 focus:ring-primary/30 dark:border-border-dark dark:bg-surface-dark dark:text-text-dark"
                     />
                   </label>
                 </div>
                 <label className="block space-y-1 text-xs font-medium text-text-muted">
-                  Medical notes
+                  {t.medicalNotes}
                   <textarea
                     rows={3}
                     value={profile.medical_notes}
@@ -467,7 +472,7 @@ export default function SymptomCheckerPage() {
                     <div className="rounded-full bg-primary/10 p-4">
                       <Activity className="h-7 w-7 animate-pulse text-primary" />
                     </div>
-                    <p className="font-semibold text-text-primary dark:text-text-dark">Analysing your symptoms...</p>
+                    <p className="font-semibold text-text-primary dark:text-text-dark">{t.analysingSymptoms}</p>
                   </Card>
                 )}
 
@@ -477,22 +482,22 @@ export default function SymptomCheckerPage() {
                       <div className="flex gap-3 rounded-lg bg-danger p-4 text-white">
                         <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
                         <div>
-                          <p className="font-bold">Emergency warning signs detected</p>
-                          <p className="text-sm opacity-90">Please seek urgent medical care immediately.</p>
+                          <p className="font-bold">{t.emergencyWarningTitle}</p>
+                          <p className="text-sm opacity-90">{t.emergencyWarningDesc}</p>
                         </div>
                       </div>
                     )}
                     <Card padding="lg" className="space-y-5">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <p className="text-xs font-semibold uppercase tracking-wider text-primary">Assessment Result</p>
+                          <p className="text-xs font-semibold uppercase tracking-wider text-primary">{t.assessmentResult}</p>
                           <h2 className="mt-1 text-xl font-bold text-text-primary dark:text-text-dark">{resultView.disease}</h2>
                         </div>
                         <RiskBadge level={resultView.riskLevel} />
                       </div>
                       <p className="text-sm leading-6 text-text-muted">{resultView.reasoning}</p>
                       <div>
-                        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">Recommended actions</p>
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">{t.recommendedActions}</p>
                         <ul className="space-y-2">
                           {resultView.actions.map((action) => (
                             <li key={action} className="flex gap-2 text-sm text-text-primary dark:text-text-dark">
@@ -503,7 +508,7 @@ export default function SymptomCheckerPage() {
                         </ul>
                       </div>
                       <div>
-                        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">Suggested specialists</p>
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">{t.suggestedSpecialists}</p>
                         <div className="flex flex-wrap gap-2">
                           {resultView.specialists.map((specialist) => (
                             <span key={specialist} className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">{specialist}</span>
@@ -511,9 +516,9 @@ export default function SymptomCheckerPage() {
                         </div>
                       </div>
                       <div>
-                        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">Nearest hospitals</p>
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">{t.nearestHospitals}</p>
                         {hospitals.length === 0 ? (
-                          <p className="rounded border border-dashed border-border p-3 text-sm text-text-muted dark:border-border-dark">No nearby hospital suggestions found for your city.</p>
+                          <p className="rounded border border-dashed border-border p-3 text-sm text-text-muted dark:border-border-dark">{t.noNearbyHospitals}</p>
                         ) : (
                           <div className="grid gap-2">
                             {hospitals.map((hospital) => (
@@ -522,7 +527,7 @@ export default function SymptomCheckerPage() {
                                   <p className="font-semibold text-text-primary dark:text-text-dark">{hospital.name}</p>
                                   <p className="text-xs text-text-muted">{hospital.city} - {hospital.specialization || hospital.specialties?.[0] || 'General'}</p>
                                 </div>
-                                {hospital.phone && <a href={`tel:${hospital.phone}`} className="text-xs font-semibold text-primary">Call</a>}
+                                {hospital.phone && <a href={`tel:${hospital.phone}`} className="text-xs font-semibold text-primary">{t.call}</a>}
                               </div>
                             ))}
                           </div>
@@ -541,32 +546,32 @@ export default function SymptomCheckerPage() {
         <div className="mt-5 flex flex-wrap gap-3">
           {step > 0 && step < 4 && (
             <Button variant="secondary" onClick={back} className="flex-1 gap-2">
-              <ChevronLeft className="h-4 w-4" /> Back
+              <ChevronLeft className="h-4 w-4" /> {t.back}
             </Button>
           )}
           {step < 3 && (
             <Button disabled={!canProceed()} onClick={next} className="flex-1 gap-2">
-              Next <ChevronRight className="h-4 w-4" />
+              {t.next} <ChevronRight className="h-4 w-4" />
             </Button>
           )}
           {step === 3 && (
             <>
               <Button variant="secondary" onClick={back} className="flex-1 gap-2">
-                <ChevronLeft className="h-4 w-4" /> Back
+                <ChevronLeft className="h-4 w-4" /> {t.back}
               </Button>
               <Button onClick={next} className="flex-1 gap-2">
-                Get Assessment <ShieldCheck className="h-4 w-4" />
+                {t.getAssessment} <ShieldCheck className="h-4 w-4" />
               </Button>
             </>
           )}
           {step === 4 && !submitting && result && (
             <>
-              <Button variant="secondary" onClick={restart} className="flex-1">Start Over</Button>
+              <Button variant="secondary" onClick={restart} className="flex-1">{t.startOver}</Button>
               <Button variant="secondary" onClick={saveToHistory} className="flex-1 gap-2">
-                <Save className="h-4 w-4" /> Save to History
+                <Save className="h-4 w-4" /> {t.saveToHistory}
               </Button>
               <Button onClick={continueInChat} className="flex-1 gap-2">
-                <MessageSquare className="h-4 w-4" /> Continue in Chat
+                <MessageSquare className="h-4 w-4" /> {t.continueInChat}
               </Button>
             </>
           )}

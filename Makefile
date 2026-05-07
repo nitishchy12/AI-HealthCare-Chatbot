@@ -10,8 +10,8 @@ dev: infra          ## Start full dev stack (infra in Docker, services local)
 	@echo "\n\033[32m✓ Infra running. Starting services...\033[0m"
 	@$(MAKE) -j3 _backend _frontend _aiservice
 
-infra:              ## Start databases only (Postgres, Mongo, Redis, Qdrant)
-	docker compose up -d postgres mongodb redis qdrant
+infra:              ## Start databases only (Postgres, Redis, Qdrant) — MongoDB is Atlas-hosted
+	docker compose up -d postgres redis qdrant
 	@echo "\033[32m✓ Waiting for health checks...\033[0m"
 	@sleep 10
 

@@ -6,12 +6,12 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     # ── JWT (shared secret with Node backend) ──────────────────────
-    jwt_secret: str = "change_me_strong_secret"
+    jwt_secret: str                      # required — no default, fails at startup if missing
     jwt_algorithm: str = "HS256"
 
     # ── AI Provider ────────────────────────────────────────────────
     ai_provider: str = "openai"          # "openai" | "anthropic"
-    ai_api_key: str = "replace_with_api_key"
+    ai_api_key: str                      # required — no default, fails at startup if missing
     ai_model: str = "gpt-4o-mini"
 
     # ── Vector DB ──────────────────────────────────────────────────
@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     collection_name: str = "medical_knowledge"
     embedding_model: str = "all-MiniLM-L6-v2"
     embedding_dim: int = 384
+    load_embedding_on_startup: bool = False
     top_k: int = 5
 
     # ── Redis ──────────────────────────────────────────────────────

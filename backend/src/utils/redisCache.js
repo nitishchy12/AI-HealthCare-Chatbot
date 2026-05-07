@@ -1,7 +1,5 @@
-/**
- * Lightweight Redis cache helper with graceful no-op when Redis is unavailable.
- * All functions are safe to call without a running Redis — they just skip caching.
- */
+const { logger } = require('./logger');
+
 let _client = null;
 
 function getClient() {
@@ -10,8 +8,12 @@ function getClient() {
   if (!url || process.env.NODE_ENV === 'test') return null;
   try {
     const Redis = require('ioredis');
-    _client = new Redis(url, { maxRetriesPerRequest: 1, lazyConnect: true, enableOfflineQueue: false });
-    _client.on('error', () => {}); // silence connection errors
+    _client = new Redis(url, {
+      maxRetriesPerRequest: null,
+      enableOfflineQueue: true,
+    });
+    _client.on('connect', () => logger.info('Redis connected'));
+    _client.on('error', (err) => logger.error('Redis error', { message: err.message }));
     return _client;
   } catch { return null; }
 }

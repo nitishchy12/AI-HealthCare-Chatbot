@@ -6,6 +6,12 @@ const rateLimit = require('express-rate-limit');
 const swaggerUi = require('swagger-ui-express');
 require('dotenv').config();
 
+// Fail-fast: catch missing critical env vars before the server starts
+const _REQUIRED = ['JWT_SECRET', 'POSTGRES_URI', 'MONGO_URI', 'FRONTEND_URL'];
+for (const _key of _REQUIRED) {
+  if (!process.env[_key]) throw new Error(`Required environment variable "${_key}" is not set`);
+}
+
 const authRoutes         = require('./routes/auth.routes');
 const chatRoutes         = require('./routes/chat.routes');
 const hospitalRoutes     = require('./routes/hospital.routes');
@@ -53,7 +59,7 @@ app.use(helmet({
 
 // ── CORS ─────────────────────────────────────────────────────────
 app.use(cors({
-  origin:      process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin:      process.env.FRONTEND_URL,
   credentials: true,
   methods:     ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-Prompt-Version'],

@@ -3,7 +3,6 @@ const { logger } = require('../utils/logger');
 
 const PROMPT_VERSION = 'health-awareness-v3';
 const SUPPORTED_LANGUAGES = ['en', 'hi'];
-const DEFAULT_AI_SERVICE_URL = 'http://localhost:8000';
 
 const symptomKnowledge = [
   {
@@ -415,7 +414,8 @@ const normalizeAssessmentResponse = (data = {}) => {
 };
 
 const callAIService = async (question, userId, language, contextMessages = [], authHeader = '') => {
-  const baseUrl = (process.env.AI_SERVICE_URL || DEFAULT_AI_SERVICE_URL).replace(/\/$/, '');
+  if (!process.env.AI_SERVICE_URL) throw new Error('AI_SERVICE_URL environment variable is required');
+  const baseUrl = process.env.AI_SERVICE_URL.replace(/\/$/, '');
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), Number(process.env.AI_SERVICE_TIMEOUT_MS) || 8000);
 

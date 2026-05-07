@@ -10,22 +10,28 @@ from routers import chat, health
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Load heavy resources once at startup; release on shutdown."""
+    """Load service resources once at startup; release on shutdown."""
     settings = get_settings()
 
-    # 1. Embedding model
-    try:
-        from core.embeddings import load_model
-        load_model(settings.embedding_model)
-    except Exception as e:
-        logger.warning(f"Embedding model failed to load: {e} — fallback mode active")
+    # The sentence-transformers/torch import can be slow on Windows, so keep it
+    # lazy by default and let the server finish startup promptly.
+    if settings.load_embedding_on_startup:
+        try:
+            from core.embeddings import load_model
 
-    # 2. Qdrant client
+            load_model(settings.embedding_model)
+        except Exception as e:
+            logger.warning(f"Embedding model failed to load: {e} - fallback mode active")
+    else:
+        logger.info("Embedding model will load lazily on first RAG request")
+
+    # Qdrant client
     try:
         from core.vector_store import init_client
+
         init_client(settings)
     except Exception as e:
-        logger.warning(f"Qdrant unavailable: {e} — vector search disabled")
+        logger.warning(f"Qdrant unavailable: {e} - vector search disabled")
 
     logger.info(f"AI service started (env={settings.app_env}, provider={settings.ai_provider})")
     yield
@@ -46,7 +52,7 @@ def create_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # Node backend is the only caller — locked down in prod via network policy
+        allow_origins=["*"],
         allow_methods=["GET", "POST"],
         allow_headers=["Authorization", "Content-Type"],
     )
@@ -61,5 +67,6 @@ app = create_app()
 
 if __name__ == "__main__":
     import uvicorn
+
     settings = get_settings()
     uvicorn.run("main:app", host="0.0.0.0", port=settings.port, reload=True)

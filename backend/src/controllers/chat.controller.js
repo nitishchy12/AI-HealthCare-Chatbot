@@ -5,6 +5,7 @@ const { buildResponse } = require('../services/ai.service');
 const convSvc     = require('../services/conversation.service');
 const { clean }   = require('../utils/sanitize');
 const { logAuditAction } = require('../utils/audit');
+const { logger }  = require('../utils/logger');
 const { CHAT_RATE_LIMIT_WINDOW_MS, CHAT_RATE_LIMIT_MAX } = require('../config/constants');
 
 // Try to build a Redis-backed, per-user rate limiter.
@@ -16,17 +17,20 @@ const buildChatLimiter = () => {
       const { RedisStore } = require('rate-limit-redis');
       const Redis = require('ioredis');
       const redisClient = new Redis(redisUrl, {
-        maxRetriesPerRequest: 1,
-        lazyConnect: true,
-        enableOfflineQueue: false,
+        maxRetriesPerRequest: null,
+        enableOfflineQueue: true,
       });
-      redisClient.on('error', () => {});
+      redisClient.on('connect', () => logger.info('Redis connected (chat limiter)'));
+      redisClient.on('error', (err) => logger.error('Redis error (chat limiter)', { message: err.message }));
+      const redis = {
+        sendCommand: (args) => redisClient.call(...args),
+      };
       return rateLimit({
         windowMs:     CHAT_RATE_LIMIT_WINDOW_MS,
         max:          CHAT_RATE_LIMIT_MAX,
         // Key by authenticated user ID so VPN/NAT doesn't affect other users
         keyGenerator: (req) => `rate:chat:${req.user?.id || req.ip}`,
-        store:        new RedisStore({ sendCommand: (...args) => redisClient.call(...args) }),
+        store:        new RedisStore({ sendCommand: (...args) => redis.sendCommand(args) }),
         passOnStoreError: true,
         standardHeaders: true,
         legacyHeaders:   false,

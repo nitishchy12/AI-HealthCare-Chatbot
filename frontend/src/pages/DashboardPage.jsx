@@ -7,19 +7,13 @@ import {
   Lightbulb, Shield, ArrowRight, TrendingUp, Flame, Clock, Bell,
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useLanguage } from '../hooks/useLanguage';
 import { getHealthHistory, getHealthTips, getNotifications } from '../services/health.service';
 import RiskBadge from '../components/ui/RiskBadge';
 import Card from '../components/ui/Card';
 import Skeleton from '../components/ui/Skeleton';
 import Button from '../components/ui/Button';
 import { cn } from '../lib/cn';
-
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
-}
 
 function computeHealthScore(items) {
   if (!items.length) return 85;
@@ -77,6 +71,7 @@ function ActivityRow({ item }) {
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [history,       setHistory]       = useState([]);
   const [tips,          setTips]          = useState([]);
   const [notifications, setNotifications] = useState([]);
@@ -97,13 +92,16 @@ export default function DashboardPage() {
   const scoreColor  = healthScore >= 75 ? 'text-success' : healthScore >= 50 ? 'text-warning' : 'text-danger';
   const recentHigh  = history.find((i) => i.riskLevel === 'High');
 
+  const h = new Date().getHours();
+  const greeting = h < 12 ? t.goodMorning : h < 17 ? t.goodAfternoon : t.goodEvening;
+
   const quickActions = [
-    { to: '/chat',            icon: MessageSquare, label: 'AI Chat',     color: 'bg-primary'  },
-    { to: '/symptom-checker', icon: Activity,      label: 'Symptoms',    color: 'bg-accent'   },
-    { to: '/reports',         icon: BarChart2,     label: 'Reports',     color: 'bg-success'  },
-    { to: '/hospitals',       icon: Hospital,      label: 'Hospitals',   color: 'bg-warning'  },
-    { to: '/tips',            icon: Lightbulb,     label: 'Health Tips', color: 'bg-primary'  },
-    ...(user?.role === 'admin' ? [{ to: '/admin', icon: Shield, label: 'Admin', color: 'bg-danger' }] : []),
+    { to: '/chat',            icon: MessageSquare, label: t.aiChat,       color: 'bg-primary'  },
+    { to: '/symptom-checker', icon: Activity,      label: t.symptoms,     color: 'bg-accent'   },
+    { to: '/reports',         icon: BarChart2,     label: t.reports,      color: 'bg-success'  },
+    { to: '/hospitals',       icon: Hospital,      label: t.hospitals,    color: 'bg-warning'  },
+    { to: '/tips',            icon: Lightbulb,     label: t.healthTips,   color: 'bg-primary'  },
+    ...(user?.role === 'admin' ? [{ to: '/admin', icon: Shield, label: t.admin, color: 'bg-danger' }] : []),
   ];
 
   return (
@@ -114,17 +112,17 @@ export default function DashboardPage() {
         <Card padding="lg" className="bg-gradient-to-br from-primary to-[#0D5F58] text-white border-0 shadow-lg">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <p className="text-white/70 text-sm font-medium">{getGreeting()},</p>
+              <p className="text-white/70 text-sm font-medium">{greeting},</p>
               <h1 className="text-2xl sm:text-3xl font-bold mt-0.5">{firstName} 👋</h1>
               <p className="text-white/80 text-sm mt-2 max-w-md">
                 {recentHigh
-                  ? `You had a high-risk event ${formatDistanceToNow(new Date(recentHigh.createdAt), { addSuffix: true })}. How are you feeling now?`
-                  : 'Welcome back. Check your health today — a quick chat takes 30 seconds.'}
+                  ? `${t.recentHighRisk} ${formatDistanceToNow(new Date(recentHigh.createdAt), { addSuffix: true })}. ${t.howAreYouFeeling}`
+                  : t.welcomeBack}
               </p>
             </div>
             <Link to="/chat">
               <Button className="shrink-0 gap-2 !bg-white/20 hover:!bg-white/30 !text-white !border-white/30 !shadow-none">
-                Open Chat <ArrowRight className="w-4 h-4" />
+                {t.openChat} <ArrowRight className="w-4 h-4" />
               </Button>
             </Link>
           </div>
@@ -145,20 +143,20 @@ export default function DashboardPage() {
                 <TrendingUp className={cn('w-5 h-5', scoreColor)} />
               </div>
               <div>
-                <p className="text-xs text-text-muted">Health Score</p>
+                <p className="text-xs text-text-muted">{t.healthScore}</p>
                 <p className={cn('text-xl font-bold leading-tight', scoreColor)}>{healthScore}<span className="text-xs text-text-muted font-normal">/100</span></p>
               </div>
             </Card>
           </motion.div>
-          <StatCard icon={Flame}    label="Active Streak"  value={`${Math.min(history.length, 7)}d`}  sub="days engaged"   iconBg="bg-warning" delay={0.05} />
-          <StatCard icon={Clock}    label="Health Records" value={history.length}                       sub="total entries"  iconBg="bg-accent"  delay={0.1}  />
-          <StatCard icon={Bell}     label="Notifications"  value={notifications.length}                 sub="new updates"    iconBg="bg-primary" delay={0.15} />
+          <StatCard icon={Flame}    label={t.activeStreak}   value={`${Math.min(history.length, 7)}d`}  sub={t.daysEngaged}   iconBg="bg-warning" delay={0.05} />
+          <StatCard icon={Clock}    label={t.healthRecords}  value={history.length}                       sub={t.totalEntries}  iconBg="bg-accent"  delay={0.1}  />
+          <StatCard icon={Bell}     label={t.notifications}  value={notifications.length}                 sub={t.newUpdates}    iconBg="bg-primary" delay={0.15} />
         </div>
       )}
 
       {/* Quick actions */}
       <Card padding="md">
-        <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">Quick Actions</h2>
+        <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">{t.quickActions}</h2>
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5">
           {quickActions.map((a) => <QuickAction key={a.to} {...a} />)}
         </div>
@@ -169,14 +167,14 @@ export default function DashboardPage() {
 
         <Card padding="md">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider">Recent Activity</h2>
+            <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider">{t.recentActivity}</h2>
             <Link to="/history" className="text-xs text-primary hover:underline flex items-center gap-1">
-              View all <ArrowRight className="w-3 h-3" />
+              {t.viewAll} <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
           {loading && [...Array(3)].map((_, i) => <Skeleton key={i} className="h-12 rounded-lg mb-2" />)}
           {!loading && history.length === 0 && (
-            <p className="text-sm text-text-muted py-8 text-center">No activity yet — start with a chat or symptom check.</p>
+            <p className="text-sm text-text-muted py-8 text-center">{t.noActivityYet}</p>
           )}
           {!loading && history.slice(0, 5).map((item) => (
             <ActivityRow key={`${item.type}-${item.id}`} item={item} />
@@ -185,19 +183,19 @@ export default function DashboardPage() {
 
         <Card padding="md">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider">Today's Tips</h2>
+            <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider">{t.todaysTips}</h2>
             <Link to="/tips" className="text-xs text-primary hover:underline flex items-center gap-1">
-              All tips <ArrowRight className="w-3 h-3" />
+              {t.allTips} <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
           {loading && [...Array(3)].map((_, i) => <Skeleton key={i} className="h-14 rounded-lg mb-2" />)}
           {!loading && tips.length === 0 && (
-            <p className="text-sm text-text-muted py-8 text-center">No tips available right now.</p>
+            <p className="text-sm text-text-muted py-8 text-center">{t.noTipsAvailable}</p>
           )}
           {!loading && tips.slice(0, 3).map((tip) => (
             <div key={tip.id} className="py-3 border-b border-border/50 dark:border-border-dark/50 last:border-0">
               <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-medium">
-                {tip.category || 'Wellness'}
+                {tip.category || t.wellness}
               </span>
               <p className="text-sm font-medium text-text-primary dark:text-text-dark mt-1">{tip.title}</p>
               <p className="text-xs text-text-muted mt-0.5 line-clamp-2">{tip.description}</p>
@@ -210,7 +208,7 @@ export default function DashboardPage() {
       {/* Notifications */}
       {!loading && notifications.length > 0 && (
         <Card padding="md">
-          <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">Notifications</h2>
+          <h2 className="text-sm font-semibold text-text-muted uppercase tracking-wider mb-3">{t.notifications}</h2>
           <div className="space-y-2">
             {notifications.slice(0, 3).map((item, i) => (
               <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-accent/5 border border-accent/10">

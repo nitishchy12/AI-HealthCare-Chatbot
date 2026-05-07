@@ -22,10 +22,6 @@ langchain-text-splitters==0.3.11
 langchain-openai==0.2.13
 langchain-anthropic==0.3.0
 langsmith==0.3.45
-presidio-analyzer
-presidio-anonymizer
-asyncpg
-motor
 
 # Evaluation
 ragas==0.4.3

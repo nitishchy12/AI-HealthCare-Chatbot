@@ -11,7 +11,8 @@ const Chat       = require('../src/models/Chat');
 const Conversation = require('../src/models/Conversation');
 const Message    = require('../src/models/Message');
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/public_health_chatbot';
+const { MONGO_URI } = process.env;
+if (!MONGO_URI) throw new Error('MONGO_URI environment variable is required');
 
 async function run() {
   await mongoose.connect(MONGO_URI);

@@ -65,7 +65,7 @@ export default function ChatbotPage() {
       setMessages(res.data?.messages || []);
       localStorage.setItem(LAST_CONV_KEY, conv._id);
     } catch {
-      toast.error('Could not load conversation');
+      toast.error(t.couldNotLoadConversation);
       setMessages([]);
     } finally {
       setMessagesLoading(false);
@@ -133,7 +133,7 @@ export default function ChatbotPage() {
           convId = conv._id;
           localStorage.setItem(LAST_CONV_KEY, convId);
         } catch {
-          toast.error('Could not start conversation');
+          toast.error(t.couldNotStartConversation);
           setMessages((prev) => prev.filter((m) => m._id !== userMsg._id));
           return;
         }
@@ -230,9 +230,9 @@ export default function ChatbotPage() {
           </button>
           <div className="flex-1 min-w-0">
             <h2 className="text-sm font-semibold text-text-primary dark:text-text-dark truncate">
-              {activeConv?.title || 'Health Chatbot'}
+              {activeConv?.title || t.healthChatbotHeader}
             </h2>
-            <p className="text-xs text-text-muted">AI-powered health awareness — not a substitute for medical advice</p>
+            <p className="text-xs text-text-muted">{t.aiHealthAwareness}</p>
           </div>
         </div>
 
@@ -253,8 +253,8 @@ export default function ChatbotPage() {
           {!messagesLoading && messages.length === 0 && !isStreaming && (
             <EmptyState
               icon={MessageSquare}
-              title="Start a conversation"
-              description="Ask a health question and I'll provide information based on verified medical sources."
+              title={t.startConversation}
+              description={t.startConversationDesc}
               className="py-16"
             />
           )}
@@ -287,7 +287,7 @@ export default function ChatbotPage() {
                 onClick={() => reset()}
                 className="ml-auto text-xs underline hover:no-underline"
               >
-                Dismiss
+                {t.dismiss}
               </button>
             </motion.div>
           )}
@@ -333,7 +333,7 @@ export default function ChatbotPage() {
             </Button>
           </form>
           <p className="text-center text-xs text-text-subtle mt-2">
-            HealthBot may make mistakes. Verify important health information with a qualified professional.
+            {t.chatDisclaimer}
           </p>
         </div>
       </div>
