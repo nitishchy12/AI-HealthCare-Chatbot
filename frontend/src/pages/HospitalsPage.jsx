@@ -20,7 +20,6 @@ const DISTANCE_OPTIONS = [2, 5, 10, 20, 50, 100, 0];
 const SYMPTOM_RESULT_TTL_MS = 30 * 60 * 1000;
 const QUICK_CITIES = ['Delhi', 'Mumbai', 'Bangalore', 'Chennai', 'Jalandhar'];
 
-// Haversine distance in km between two lat/lng points
 function haversineKm(lat1, lng1, lat2, lng2) {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -33,7 +32,6 @@ function haversineKm(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.asin(Math.sqrt(a));
 }
 
-// Rough travel time estimate (city driving ~30 km/h)
 function travelMinutes(distKm) {
   return Math.max(1, Math.round((distKm / 30) * 60));
 }
@@ -74,7 +72,6 @@ function HospitalCard({ hospital, active, userLocation, onFocus, t }) {
   const specialties = toSpecialties(hospital);
   const directionsUrl = osmDirections(hospital, userLocation);
 
-  // Use backend distance if available; compute client-side as fallback
   const distKm = hospital.distance_km != null
     ? Number(hospital.distance_km)
     : (userLocation && hasCoords(hospital)
@@ -124,19 +121,24 @@ function HospitalCard({ hospital, active, userLocation, onFocus, t }) {
         )}
       </div>
 
+      {/* FIXED: replaced Button asChild with plain anchor tags */}
       <div className="mt-4 grid grid-cols-2 gap-2">
-        <Button asChild variant="secondary" size="sm" className="w-full">
-          <a href={`tel:${hospital.phone || ''}`}>
-            <Phone className="h-3.5 w-3.5" />
-            {t.call}
-          </a>
-        </Button>
-        <Button asChild size="sm" className="w-full">
-          <a href={directionsUrl} target="_blank" rel="noreferrer">
-            <Navigation2 className="h-3.5 w-3.5" />
-            {t.directions}
-          </a>
-        </Button>
+        <a
+          href={`tel:${hospital.phone || ''}`}
+          className="flex w-full items-center justify-center gap-1.5 rounded-md border border-border bg-white px-3 py-1.5 text-xs font-medium text-text-primary hover:bg-slate-50 dark:border-border-dark dark:bg-surface-dark dark:text-text-dark"
+        >
+          <Phone className="h-3.5 w-3.5" />
+          {t.call}
+        </a>
+        <a
+          href={directionsUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="flex w-full items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary/90"
+        >
+          <Navigation2 className="h-3.5 w-3.5" />
+          {t.directions}
+        </a>
       </div>
     </article>
   );
@@ -233,7 +235,7 @@ function HospitalMap({ hospitals, activeId, userLocation, onSelect, t }) {
       });
 
       if (bounds.length) {
-        mapObj.current.fitBounds(bounds, { padding: [40, 40], maxZoom: userLocation ? 13 : 13 });
+        mapObj.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
       } else {
         mapObj.current.setView(DEFAULT_CENTER, 5);
       }
@@ -255,7 +257,6 @@ export default function HospitalsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Geolocation state — separated from generic loading
   const [userLocation, setUserLocation] = useState(null);
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState('');
@@ -265,13 +266,11 @@ export default function HospitalsPage() {
   const [showLocationBanner, setShowLocationBanner] = useState(true);
   const [symptomBanner, setSymptomBanner] = useState(null);
 
-  // Debounce city input
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedCity(city.trim()), 400);
     return () => clearTimeout(timer);
   }, [city]);
 
-  // Restore symptom context from recent check
   useEffect(() => {
     try {
       const raw = localStorage.getItem('last_symptom_result');
@@ -300,7 +299,6 @@ export default function HospitalsPage() {
         })
         : await getHospitalsByCity(debouncedCity, specialty);
 
-      // Sort by distance ascending when location is available
       const list = response.data || [];
       if (userLocation) {
         list.sort((a, b) => {
@@ -321,7 +319,6 @@ export default function HospitalsPage() {
     if (userLocation || debouncedCity) loadHospitals();
   }, [debouncedCity, loadHospitals, userLocation]);
 
-  // Request geolocation with full error handling + optional reverse geocoding
   const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
       toast.error(t.geoNotSupported);
@@ -338,7 +335,6 @@ export default function HospitalsPage() {
         setShowLocationBanner(false);
         setGeoLoading(false);
 
-        // Reverse geocode via Nominatim (best-effort, silent on failure)
         try {
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=en`,
@@ -353,7 +349,7 @@ export default function HospitalsPage() {
             '';
           if (cityName) setDetectedCity(cityName);
         } catch {
-          // Reverse geocoding is optional; do not block on failure
+          // silent
         }
       },
       (positionError) => {
@@ -361,15 +357,12 @@ export default function HospitalsPage() {
         setShowLocationBanner(true);
         let msg;
         if (positionError.code === 1) {
-          // PERMISSION_DENIED
           msg = t.locationDenied;
           toast.error(t.locationPermissionDenied);
         } else if (positionError.code === 3) {
-          // TIMEOUT
           msg = t.locationTimeout;
           toast.error(t.locationTimedOut);
         } else {
-          // POSITION_UNAVAILABLE
           msg = t.locationUnavailable;
           toast.error(t.couldNotDetectLocation);
         }
@@ -393,8 +386,6 @@ export default function HospitalsPage() {
     return [...values].sort();
   }, [hospitals]);
 
-  // Client-side filter: emergency toggle; radius is handled server-side but we
-  // also guard against backend returning out-of-radius records
   const visibleHospitals = useMemo(() => hospitals.filter((hospital) => {
     if (emergencyOnly && !hospital.emergency_24h) return false;
     if (userLocation && radius > 0 && hasCoords(hospital)) {
@@ -413,11 +404,9 @@ export default function HospitalsPage() {
   return (
     <div className="min-h-[calc(100vh-56px)] bg-background dark:bg-background-dark">
 
-      {/* ── Header / filters ─────────────────────────────────────────────── */}
       <div className="border-b border-border bg-white/90 px-4 py-4 dark:border-border-dark dark:bg-surface-dark/90">
         <div className="mx-auto max-w-screen-2xl space-y-3">
 
-          {/* Title row */}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-xl font-semibold text-text-primary dark:text-text-dark">
@@ -453,7 +442,6 @@ export default function HospitalsPage() {
             </Button>
           </div>
 
-          {/* Symptom context banner */}
           {symptomBanner && (
             <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-primary">
               <AlertCircle className="h-4 w-4 shrink-0" />
@@ -468,7 +456,6 @@ export default function HospitalsPage() {
             </div>
           )}
 
-          {/* Geolocation error banner */}
           {geoError && (
             <div className="flex flex-col gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger sm:flex-row sm:items-center">
               <AlertCircle className="h-4 w-4 shrink-0" />
@@ -486,7 +473,6 @@ export default function HospitalsPage() {
             </div>
           )}
 
-          {/* Location share nudge banner */}
           {!userLocation && !geoError && showLocationBanner && (
             <div className="flex flex-col gap-2 rounded-lg border border-border bg-slate-50 px-3 py-2 text-sm text-text-muted dark:border-border-dark dark:bg-slate-900/30 sm:flex-row sm:items-center">
               <span className="flex-1">{t.shareLocationDesc}</span>
@@ -496,7 +482,6 @@ export default function HospitalsPage() {
             </div>
           )}
 
-          {/* Quick city chips — disabled when location is active */}
           {!userLocation && (
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs text-text-subtle">{t.quickSearch}:</span>
@@ -518,10 +503,7 @@ export default function HospitalsPage() {
             </div>
           )}
 
-          {/* Filter row */}
           <div className="grid gap-2 md:grid-cols-[minmax(180px,1fr)_220px_160px_200px]">
-
-            {/* City search */}
             <label className="relative block">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-subtle" />
               <input
@@ -533,7 +515,6 @@ export default function HospitalsPage() {
               />
             </label>
 
-            {/* Specialty filter */}
             <select
               value={specialty}
               onChange={(event) => setSpecialty(event.target.value)}
@@ -545,7 +526,6 @@ export default function HospitalsPage() {
               ))}
             </select>
 
-            {/* Emergency toggle */}
             <label className="flex h-10 cursor-pointer items-center gap-2 rounded border border-border bg-white px-3 text-sm text-text-primary dark:border-border-dark dark:bg-surface-dark dark:text-text-dark">
               <input
                 type="checkbox"
@@ -556,7 +536,6 @@ export default function HospitalsPage() {
               {t.emergencyOnly}
             </label>
 
-            {/* Radius selector — full range, enabled only with location */}
             <select
               value={radius}
               disabled={!userLocation}
@@ -573,10 +552,8 @@ export default function HospitalsPage() {
         </div>
       </div>
 
-      {/* ── Map + List split layout ──────────────────────────────────────── */}
       <main className="mx-auto grid max-w-screen-2xl gap-0 lg:h-[calc(100vh-220px)] lg:grid-cols-[minmax(0,3fr)_minmax(360px,2fr)]">
 
-        {/* Map panel */}
         <section className="min-h-[380px] overflow-hidden border-b border-border dark:border-border-dark lg:border-b-0 lg:border-r">
           {loading && !visibleHospitals.length ? (
             <div className="h-full min-h-[380px] bg-slate-100 p-4 dark:bg-slate-900/30">
@@ -593,10 +570,8 @@ export default function HospitalsPage() {
           )}
         </section>
 
-        {/* Hospitals list panel */}
         <aside className="max-h-[calc(100vh-220px)] overflow-y-auto p-4">
 
-          {/* Error state */}
           {error && (
             <div className="mb-3 rounded-lg border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
               <div className="flex items-center gap-2 font-medium">
@@ -616,7 +591,6 @@ export default function HospitalsPage() {
             </div>
           )}
 
-          {/* Loading skeletons */}
           {loading && (
             <div className="space-y-3">
               {[0, 1, 2].map((item) => (
@@ -625,7 +599,6 @@ export default function HospitalsPage() {
             </div>
           )}
 
-          {/* Initial empty state */}
           {!loading && !error && !userLocation && !debouncedCity && (
             <EmptyState
               icon={MapPin}
@@ -635,7 +608,6 @@ export default function HospitalsPage() {
             />
           )}
 
-          {/* No results state */}
           {!loading && !error && (userLocation || debouncedCity) && !visibleHospitals.length && (
             <EmptyState
               icon={AlertCircle}
@@ -649,7 +621,6 @@ export default function HospitalsPage() {
             />
           )}
 
-          {/* Hospital cards */}
           {!loading && !error && visibleHospitals.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between text-sm text-text-muted">
